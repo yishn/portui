@@ -42,8 +42,10 @@
     "@storybook/addon-actions": "^5.3.18",
     "@storybook/addon-knobs": "^5.3.18",
     "@storybook/addon-links": "^5.3.18",
+    "@storybook/addon-storysource": "^5.3.18",
     "@storybook/addons": "^5.3.18",
     "@storybook/react": "^5.3.18",
+    "@types/classnames": "^2.2.10",
     "@types/react": "^16.9.34",
     "@types/react-dom": "^16.9.6",
     "babel-loader": "^8.1.0",
@@ -56,5 +58,7 @@
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
   },
-  "dependencies": {}
+  "dependencies": {
+    "classnames": "^2.2.6"
+  }
 }
