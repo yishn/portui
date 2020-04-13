@@ -1,10 +1,7 @@
-import {createElement as h, Component, CSSProperties, ReactNode} from 'react'
+import {createElement as h, createRef, Component, ReactNode} from 'react'
+import {PortuiComponentProps} from './main'
 
-export interface SplitContainerProps {
-  id?: string
-  class?: string
-  className?: string
-  style?: CSSProperties
+export interface SplitContainerProps extends PortuiComponentProps {
   vertical?: boolean
   invert?: boolean
   procentualSplit?: boolean
@@ -14,13 +11,13 @@ export interface SplitContainerProps {
   mainContent?: ReactNode
   sideContent?: ReactNode
 
-  onFinishedResizing?: () => any
-  onChange?: (evt: {sideSize: number}) => any
+  onResizeFinished?: () => any
+  onResize?: (evt: {sideSize: number}) => any
 }
 
 export default class SplitContainer extends Component<SplitContainerProps> {
   resizerMouseDown = false
-  element: HTMLElement | null = null
+  elementRef = createRef<HTMLElement>()
 
   handleResizerMouseDown = (evt: MouseEvent) => {
     if (evt.button !== 0) return
@@ -30,18 +27,17 @@ export default class SplitContainer extends Component<SplitContainerProps> {
   handleMouseUp = (evt: MouseEvent) => {
     if (evt.button !== 0 || !this.resizerMouseDown) return
 
-    let {onFinishedResizing = () => {}} = this.props
+    let {onResizeFinished = () => {}} = this.props
 
     this.resizerMouseDown = false
-    if (this.props.onFinishedResizing) onFinishedResizing()
+    onResizeFinished()
   }
 
   handleMouseMove = (evt: MouseEvent) => {
-    if (!this.element || !this.resizerMouseDown) return
+    if (this.elementRef.current == null || !this.resizerMouseDown) return
 
-    let {vertical, invert, procentualSplit, onChange = () => {}} = this.props
-    let rect = this.element.getBoundingClientRect()
-
+    let {vertical, invert, procentualSplit, onResize = () => {}} = this.props
+    let rect = this.elementRef.current.getBoundingClientRect()
     let mousePosition = !vertical ? evt.clientX : evt.clientY
     let containerBegin = !vertical ? rect.left : rect.top
     let containerEnd = !vertical ? rect.right : rect.bottom
@@ -57,7 +53,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           : (sideSize * 100) / (containerEnd - containerBegin)
     }
 
-    onChange({sideSize})
+    onResize({sideSize})
   }
 
   componentDidMount() {
@@ -113,7 +109,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
     return h(
       'div',
       {
-        ref: el => (this.element = el),
+        ref: this.elementRef,
         id,
         className: `portui-split-container ${className}`,
         style: {
