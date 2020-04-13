@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "outDir": "./lib",
+    "target": "ES6",
+    "module": "CommonJS",
+    "strict": true
+  },
+  "include": ["./src/**/*"]
+}
