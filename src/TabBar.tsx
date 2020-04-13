@@ -7,6 +7,7 @@ import {
   WheelEvent,
   SyntheticEvent,
 } from 'react'
+import scrollIntoView from 'scroll-into-view-if-needed'
 import {PortuiComponentProps} from './main'
 
 export interface TabData<T> {
@@ -34,6 +35,27 @@ export default class TabBar<T> extends Component<TabBarProps<T>> {
     evt.preventDefault()
 
     this.scrollContainerRef.current.scrollLeft += evt.deltaY
+  }
+
+  componentDidUpdate(prevProps: TabBarProps<T>) {
+    if (
+      this.props.tabs != null &&
+      this.scrollContainerRef.current != null &&
+      prevProps.selectedTabKey !== this.props.selectedTabKey
+    ) {
+      let index = this.props.tabs.findIndex(
+        tab => tab.key === this.props.selectedTabKey
+      )
+
+      let tabElement = this.scrollContainerRef.current
+        .querySelectorAll('.portui-tabs > *')
+        .item(index)
+
+      scrollIntoView(tabElement, {
+        scrollMode: 'if-needed',
+        boundary: this.scrollContainerRef.current,
+      })
+    }
   }
 
   render() {

@@ -23,6 +23,7 @@ export const Default = () => {
       }))}
       renderTab={tab => (
         <a
+          key={tab.key}
           style={{
             flex: '0 0 auto',
             padding: '.2rem .5rem',
