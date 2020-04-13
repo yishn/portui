@@ -1,4 +1,10 @@
-import {createElement as h, createRef, Component, ReactNode} from 'react'
+import {
+  createElement,
+  createRef,
+  Component,
+  ReactNode,
+  MouseEvent as ReactMouseEvent,
+} from 'react'
 import {PortuiComponentProps} from './main'
 
 export interface SplitContainerProps extends PortuiComponentProps {
@@ -17,9 +23,9 @@ export interface SplitContainerProps extends PortuiComponentProps {
 
 export default class SplitContainer extends Component<SplitContainerProps> {
   resizerMouseDown = false
-  elementRef = createRef<HTMLElement>()
+  elementRef = createRef<HTMLDivElement>()
 
-  handleResizerMouseDown = (evt: MouseEvent) => {
+  handleResizerMouseDown = (evt: ReactMouseEvent) => {
     if (evt.button !== 0) return
     this.resizerMouseDown = true
   }
@@ -89,52 +95,51 @@ export default class SplitContainer extends Component<SplitContainerProps> {
     let gridTemplateRows = !vertical ? '100%' : gridTemplate.join(' ')
     let gridTemplateColumns = vertical ? '100%' : gridTemplate.join(' ')
 
-    let resizer = h('div', {
-      className: 'portui-resizer',
-      style: {
-        position: 'absolute',
-        width: vertical ? null : splitterSize,
-        height: !vertical ? null : splitterSize,
-        cursor: vertical ? 'ns-resize' : 'ew-resize',
-        left: vertical ? 0 : !invert ? 0 : null,
-        right: vertical ? 0 : invert ? 0 : null,
-        top: !vertical ? 0 : !invert ? 0 : null,
-        bottom: !vertical ? 0 : invert ? 0 : null,
-        zIndex: splitterZIndex,
-      },
+    let resizer = (
+      <div
+        className="portui-resizer"
+        style={{
+          position: 'absolute',
+          width: vertical ? undefined : splitterSize,
+          height: !vertical ? undefined : splitterSize,
+          cursor: vertical ? 'ns-resize' : 'ew-resize',
+          left: vertical ? 0 : !invert ? 0 : undefined,
+          right: vertical ? 0 : invert ? 0 : undefined,
+          top: !vertical ? 0 : !invert ? 0 : undefined,
+          bottom: !vertical ? 0 : invert ? 0 : undefined,
+          zIndex: splitterZIndex,
+        }}
+        onMouseDown={this.handleResizerMouseDown}
+      />
+    )
 
-      onMouseDown: this.handleResizerMouseDown,
-    })
-
-    return h(
-      'div',
-      {
-        ref: this.elementRef,
-        id,
-        className: `portui-split-container ${className}`,
-        style: {
+    return (
+      <div
+        ref={this.elementRef}
+        id={id}
+        className={`portui-split-container ${className}`}
+        style={{
           ...style,
           display: 'grid',
           gridTemplate: `${gridTemplateRows} / ${gridTemplateColumns}`,
-        },
-      },
+        }}
+      >
+        {!invert && mainContent}
 
-      !invert && mainContent,
-
-      h(
-        'div',
-        {
-          className: `portui-side`,
-          style: {
+        <div
+          className="portui-side"
+          style={{
             position: 'relative',
             display: 'grid',
             gridTemplate: '100% / 100%',
-          },
-        },
-        [sideContent, resizer]
-      ),
+          }}
+        >
+          {sideContent}
+          {resizer}
+        </div>
 
-      invert && mainContent
+        {invert && mainContent}
+      </div>
     )
   }
 }

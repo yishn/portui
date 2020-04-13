@@ -3,7 +3,9 @@
     "outDir": "./lib",
     "target": "ES6",
     "module": "CommonJS",
-    "strict": true
+    "strict": true,
+    "jsx": "react",
+    "jsxFactory": "createElement"
   },
   "include": ["./src/**/*"]
 }

@@ -5,8 +5,11 @@
   "main": "./lib/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier \"./**/*.{ts,md}\" --write",
-    "format-watch": "onchange \"./**/*.{ts,md}\" -- prettier {{changed}} --write"
+    "build": "tsc",
+    "format": "prettier \"./**/*.{ts,tsx,js,md}\" --write",
+    "format-watch": "onchange \"./**/*.{ts,tsx,js,md}\" -- prettier {{changed}} --write",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "repository": {
     "type": "git",
@@ -35,14 +38,22 @@
     "react": "^16.8.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@storybook/addon-actions": "^5.3.18",
+    "@storybook/addon-links": "^5.3.18",
+    "@storybook/addons": "^5.3.18",
+    "@storybook/react": "^5.3.18",
     "@types/react": "^16.9.34",
     "@types/react-dom": "^16.9.6",
+    "babel-loader": "^8.1.0",
     "onchange": "^6.1.0",
     "prettier": "^2.0.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "ts-loader": "^6.2.2",
     "typescript": "^3.8.3",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
-  }
+  },
+  "dependencies": {}
 }
