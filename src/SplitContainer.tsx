@@ -10,7 +10,7 @@ import {PortuiComponentProps} from './main'
 export interface SplitContainerProps extends PortuiComponentProps {
   vertical?: boolean
   invert?: boolean
-  procentualSplit?: boolean
+  percentalSplit?: boolean
   sideSize?: number
   splitterSize?: number
   splitterZIndex?: number
@@ -41,18 +41,25 @@ export default class SplitContainer extends Component<SplitContainerProps> {
 
   handleMouseMove = (evt: MouseEvent) => {
     if (this.elementRef.current == null || !this.resizerMouseDown) return
+    evt.preventDefault()
 
-    let {vertical, invert, procentualSplit, onResize = () => {}} = this.props
+    let {vertical, invert, percentalSplit, onResize = () => {}} = this.props
     let rect = this.elementRef.current.getBoundingClientRect()
     let mousePosition = !vertical ? evt.clientX : evt.clientY
     let containerBegin = !vertical ? rect.left : rect.top
     let containerEnd = !vertical ? rect.right : rect.bottom
-    let sideSize = Math.min(
-      !invert ? containerEnd - mousePosition : mousePosition - containerBegin,
-      containerEnd - containerBegin
+    let sideSize = Math.max(
+      Math.min(
+        // Add one pixel for cursor stability
+        !invert
+          ? containerEnd - mousePosition + 1
+          : mousePosition - containerBegin + 1,
+        containerEnd - containerBegin
+      ),
+      0
     )
 
-    if (procentualSplit) {
+    if (percentalSplit) {
       sideSize =
         containerEnd === containerBegin
           ? 0
@@ -79,7 +86,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
       style = {},
       vertical,
       invert,
-      procentualSplit,
+      percentalSplit: procentualSplit,
       mainContent,
       sideContent,
       sideSize = 200,
@@ -95,7 +102,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
     let gridTemplateRows = !vertical ? '100%' : gridTemplate.join(' ')
     let gridTemplateColumns = vertical ? '100%' : gridTemplate.join(' ')
 
-    let resizer = (
+    let resizerNode = (
       <div
         className="portui-resizer"
         style={{
@@ -135,7 +142,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           }}
         >
           {sideContent}
-          {resizer}
+          {resizerNode}
         </div>
 
         {invert && mainContent}
