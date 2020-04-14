@@ -5,29 +5,36 @@ import {
   ComponentType,
   Key,
   WheelEvent,
+  MouseEvent as ReactMouseEvent,
 } from 'react'
 import scrollIntoView from 'scroll-into-view-if-needed'
 import {PortuiComponentProps} from './main'
 
-export interface TabData<T> {
+export interface TabData {
   tabKey: Key
-  data: T
 }
 
-export interface TabProps<T> extends TabData<T> {
+export interface TabProps extends TabData {
   selected: boolean
+
+  onMouseDown: (tabKey: Key, evt: ReactMouseEvent) => void
 }
 
 export interface TabBarProps<T> extends PortuiComponentProps {
   allowReorder?: boolean
   allowWheelScroll?: boolean
   selectedTabId?: Key
-  tabs?: Array<TabData<T>>
-  TabComponent?: ComponentType<TabProps<T>>
+  tabs?: Array<TabData & T>
+  TabComponent?: ComponentType<TabProps & T>
+
+  onReorder?: (evt: {tabs: Array<TabData & T>}) => any
 }
 
 interface TabBarState {
   scrollLeft: number
+  reorderingTabKey: Key | null
+  reorderingPermutation: number[] | null
+  tabCenters: number[] | null
 }
 
 export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
@@ -39,6 +46,9 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
 
     this.state = {
       scrollLeft: 0,
+      reorderingTabKey: null,
+      reorderingPermutation: null,
+      tabCenters: null,
     }
   }
 
@@ -53,15 +63,44 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
     ) {
       this.tabsContainer.current.scrollLeft = this.state.scrollLeft
     }
+
+    if (
+      this.state.tabCenters == null ||
+      prevState.reorderingPermutation !== this.state.reorderingPermutation
+    ) {
+      this.setState({
+        tabCenters: this.getTabElements().map(
+          el => el.offsetLeft + el.offsetWidth / 2
+        ),
+      })
+    }
   }
 
-  getTabElementByKey(tabKey: Key): Element | undefined {
+  componentDidMount() {
+    document.addEventListener('mouseup', this.handleMouseUp)
+    document.addEventListener('mousemove', this.handleMouseMove)
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mousemove', this.handleMouseMove)
+  }
+
+  getTabElements(): HTMLElement[] {
+    if (this.tabsContainer.current == null) return []
+
+    return [
+      ...this.tabsContainer.current.querySelectorAll('.portui-tabs > *'),
+    ] as HTMLElement[]
+  }
+
+  getTabElementByKey(tabKey: Key): HTMLElement | undefined {
     if (this.props.tabs == null || this.tabsContainer.current == null) return
 
     let index = this.props.tabs.findIndex(tab => tab.tabKey === tabKey)
     let tabElement = this.tabsContainer.current
       .querySelectorAll('.portui-tabs > *')
-      .item(index)
+      .item(index) as HTMLElement
 
     return tabElement
   }
@@ -107,8 +146,79 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
     this.scrollTo(this.state.scrollLeft + delta)
   }
 
+  handleTabMouseDown = (tabKey: Key, evt: ReactMouseEvent) => {
+    if (
+      evt.button !== 0 ||
+      !this.props.allowReorder ||
+      this.state.reorderingTabKey != null
+    )
+      return
+
+    evt.preventDefault()
+
+    this.setState({
+      reorderingTabKey: tabKey,
+    })
+  }
+
+  handleMouseUp = (evt: MouseEvent) => {
+    if (evt.button !== 0 || this.state.reorderingTabKey == null) return
+
+    evt.preventDefault()
+
+    if (this.state.reorderingPermutation != null) {
+      this.props.onReorder?.({
+        tabs: this.state.reorderingPermutation.map(
+          i => (this.props.tabs ?? [])[i]
+        ),
+      })
+    }
+
+    this.setState({
+      reorderingTabKey: null,
+      reorderingPermutation: null,
+    })
+  }
+
+  handleMouseMove = (evt: MouseEvent) => {
+    if (
+      this.tabsContainer.current == null ||
+      this.props.tabs == null ||
+      this.state.reorderingTabKey == null ||
+      this.state.tabCenters == null
+    )
+      return
+
+    evt.preventDefault()
+
+    let tabIndex = this.props.tabs.findIndex(
+      tab => tab.tabKey === this.state.reorderingTabKey
+    )
+    if (tabIndex < 0) return
+
+    let tabsContainerLeft = this.tabsContainer.current.getBoundingClientRect()
+      .left
+    let mouseLeft =
+      evt.clientX - tabsContainerLeft + this.tabsContainer.current.scrollLeft
+    let permutation =
+      this.state.reorderingPermutation ?? this.props.tabs.map((_, i) => i)
+    let tabPermutationIndex = permutation.indexOf(tabIndex)
+    permutation = permutation.filter(i => i !== tabIndex)
+
+    let insertBeforeIndex = this.state.tabCenters
+      .filter((_, i) => i !== tabPermutationIndex)
+      .findIndex((center, i) => mouseLeft < center)
+    if (insertBeforeIndex < 0) insertBeforeIndex = this.state.tabCenters.length
+
+    permutation.splice(insertBeforeIndex, 0, tabIndex)
+
+    this.setState({
+      reorderingPermutation: permutation,
+    })
+  }
+
   render() {
-    let props = this.props
+    let {props, state} = this
     let {TabComponent = () => null} = props
 
     return (
@@ -134,16 +244,24 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
           }}
           onWheel={this.handleWheel}
         >
-          {(props.tabs ?? []).map((tab, i) => {
-            let selected =
-              props.selectedTabId != null
-                ? props.selectedTabId === tab.tabKey
-                : i === 0
-
-            return (
-              <TabComponent {...tab} key={tab.tabKey} selected={selected} />
+          {(props.tabs ?? [])
+            .map((tab, i, tabs) =>
+              state.reorderingPermutation == null
+                ? tab
+                : tabs[state.reorderingPermutation[i]]
             )
-          })}
+            .map((tab, i) => (
+              <TabComponent
+                {...tab}
+                key={tab.tabKey}
+                selected={
+                  props.selectedTabId != null
+                    ? props.selectedTabId === tab.tabKey
+                    : i === 0
+                }
+                onMouseDown={this.handleTabMouseDown}
+              />
+            ))}
         </div>
       </div>
     )

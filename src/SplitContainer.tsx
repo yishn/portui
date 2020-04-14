@@ -33,17 +33,15 @@ export default class SplitContainer extends Component<SplitContainerProps> {
   handleMouseUp = (evt: MouseEvent) => {
     if (evt.button !== 0 || !this.resizerMouseDown) return
 
-    let {onResizeFinished = () => {}} = this.props
-
     this.resizerMouseDown = false
-    onResizeFinished()
+    this.props.onResizeFinished?.()
   }
 
   handleMouseMove = (evt: MouseEvent) => {
     if (this.elementRef.current == null || !this.resizerMouseDown) return
     evt.preventDefault()
 
-    let {vertical, invert, percentalSplit, onResize = () => {}} = this.props
+    let {vertical, invert, percentalSplit, onResize} = this.props
     let rect = this.elementRef.current.getBoundingClientRect()
     let mousePosition = !vertical ? evt.clientX : evt.clientY
     let containerBegin = !vertical ? rect.left : rect.top
@@ -66,7 +64,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           : (sideSize * 100) / (containerEnd - containerBegin)
     }
 
-    onResize({sideSize})
+    onResize?.({sideSize})
   }
 
   componentDidMount() {
