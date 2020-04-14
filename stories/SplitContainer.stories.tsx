@@ -9,12 +9,12 @@ export default {
   decorators: [withKnobs],
 }
 
-let createStory = (percentualSplit: boolean) => () => {
-  let [sideSize, setSideSize] = useState(percentualSplit ? 33 : 200)
+let createStory = (percentalSplit: boolean) => () => {
+  let [sideSize, setSideSize] = useState(percentalSplit ? 33 : 200)
 
   return (
     <SplitContainer
-      percentalSplit={percentualSplit}
+      percentalSplit={percentalSplit}
       vertical={boolean('vertical', false)}
       invert={boolean('invert', false)}
       sideSize={sideSize}
@@ -25,8 +25,8 @@ let createStory = (percentualSplit: boolean) => () => {
       mainContent={<div>Main Content</div>}
       sideContent={
         <div style={{background: 'rgba(0, 0, 0, .1)'}}>
-          Side Content, Size: {sideSize}
-          {percentualSplit ? '%' : 'px'}
+          Side Content, sideSize: {sideSize}
+          {percentalSplit ? '%' : 'px'}
         </div>
       }
       onResize={evt => {

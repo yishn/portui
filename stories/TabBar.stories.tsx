@@ -10,35 +10,35 @@ export default {
 }
 
 export const Default = () => {
-  let [selectedTabKey, setSelectedTabKey] = useState<Key>(1)
+  let [selectedTabId, setSelectedTabId] = useState<Key>(1)
 
   return (
     <TabBar
       style={{background: 'rgba(0, 0, 0, .1)'}}
       allowReorder={boolean('allowReorder', false)}
-      selectedTabKey={selectedTabKey}
+      allowWheelScroll={boolean('useWheelToScroll', true)}
+      selectedTabId={selectedTabId}
       tabs={[...Array(50)].map((_, i) => ({
-        key: i + 1,
+        tabKey: i + 1,
         data: {title: `File ${i + 1}`},
       }))}
-      renderTab={tab => (
+      TabComponent={props => (
         <a
-          key={tab.key}
           style={{
             flex: '0 0 auto',
             padding: '.2rem .5rem',
-            background: tab.selected ? 'rgba(0, 0, 0, .1)' : undefined,
+            background: props.selected ? 'rgba(0, 0, 0, .1)' : undefined,
           }}
           href="#"
-          title={tab.data.title}
+          title={props.data.title}
           onClick={evt => {
             evt.preventDefault()
 
-            setSelectedTabKey(tab.key)
+            setSelectedTabId(props.tabKey)
             action('Tab.onClick')(evt)
           }}
         >
-          {tab.data.title}
+          {props.data.title}
         </a>
       )}
     />
