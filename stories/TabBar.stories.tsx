@@ -9,10 +9,10 @@ export default {
   decorators: [withKnobs],
 }
 
-export const Default = () => {
-  let [selectedTabId, setSelectedTabId] = useState(1)
+let createStory = (tabsCount: number) => () => {
+  let [currentTabKey, setCurrentTabKey] = useState(1)
   let [tabs, setTabs] = useState(
-    [...Array(50)].map((_, i) => ({
+    [...Array(tabsCount)].map((_, i) => ({
       tabKey: i + 1,
       title: `File ${i + 1}`,
     }))
@@ -23,14 +23,14 @@ export const Default = () => {
       style={{background: 'rgba(0, 0, 0, .1)'}}
       allowReorder={boolean('allowReorder', false)}
       allowWheelScroll={boolean('useWheelToScroll', true)}
-      selectedTabId={selectedTabId}
+      currentTabKey={currentTabKey}
       tabs={tabs}
-      TabComponent={props => (
+      Tab={props => (
         <a
           style={{
             flex: '0 0 auto',
             padding: '.2rem .5rem',
-            background: props.selected ? 'rgba(0, 0, 0, .1)' : undefined,
+            background: props.current ? 'rgba(0, 0, 0, .1)' : undefined,
           }}
           href="#"
           title={props.title}
@@ -41,7 +41,7 @@ export const Default = () => {
             if (evt.button !== 0) return
             evt.preventDefault()
 
-            setSelectedTabId(props.tabKey)
+            setCurrentTabKey(props.tabKey)
             action('Tab.onMouseDown')(props.tabKey, evt)
           }}
         >
@@ -55,3 +55,6 @@ export const Default = () => {
     />
   )
 }
+
+export const Default = createStory(5)
+export const WithOverflow = createStory(50)

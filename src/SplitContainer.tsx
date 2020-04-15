@@ -25,6 +25,16 @@ export default class SplitContainer extends Component<SplitContainerProps> {
   resizerMouseDown = false
   elementRef = createRef<HTMLDivElement>()
 
+  componentDidMount() {
+    document.addEventListener('mouseup', this.handleMouseUp)
+    document.addEventListener('mousemove', this.handleMouseMove)
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('mouseup', this.handleMouseUp)
+    document.removeEventListener('mousemove', this.handleMouseMove)
+  }
+
   handleResizerMouseDown = (evt: ReactMouseEvent) => {
     if (evt.button !== 0) return
     this.resizerMouseDown = true
@@ -65,16 +75,6 @@ export default class SplitContainer extends Component<SplitContainerProps> {
     }
 
     onResize?.({sideSize})
-  }
-
-  componentDidMount() {
-    document.addEventListener('mouseup', this.handleMouseUp)
-    document.addEventListener('mousemove', this.handleMouseMove)
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('mouseup', this.handleMouseUp)
-    document.removeEventListener('mousemove', this.handleMouseMove)
   }
 
   render() {

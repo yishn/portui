@@ -6,7 +6,9 @@ import {
   Key,
   WheelEvent,
   MouseEvent as ReactMouseEvent,
+  UIEvent,
 } from 'react'
+import classnames from 'classnames'
 import scrollIntoView from 'scroll-into-view-if-needed'
 import {PortuiComponentProps} from './main'
 
@@ -15,70 +17,59 @@ export interface TabData {
 }
 
 export interface TabProps extends TabData {
-  selected: boolean
+  current: boolean
 
   onMouseDown: (tabKey: Key, evt: ReactMouseEvent) => void
 }
 
-export interface TabBarProps<T> extends PortuiComponentProps {
+export interface TabBarProps<T extends TabData> extends PortuiComponentProps {
   allowReorder?: boolean
   allowWheelScroll?: boolean
-  selectedTabId?: Key
-  tabs?: Array<TabData & T>
-  TabComponent?: ComponentType<TabProps & T>
+  autoScrollAreaSize?: number
+  autoScrollInterval?: number
+  autoScrollStep?: number
+  currentTabKey?: Key
+  tabs?: Array<T>
 
-  onReorder?: (evt: {tabs: Array<TabData & T>}) => any
+  Tab?: ComponentType<TabProps & T>
+  onReorder?: (evt: {tabs: Array<T>}) => any
 }
 
 interface TabBarState {
-  scrollLeft: number
-  reorderingTabKey: Key | null
+  beginOverflow: boolean
+  endOverflow: boolean
   reorderingPermutation: number[] | null
-  tabCenters: number[] | null
 }
 
-export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
+export default class TabBar<T extends TabData> extends Component<
+  TabBarProps<T>,
+  TabBarState
+> {
   elementRef = createRef<HTMLDivElement>()
-  tabsContainer = createRef<HTMLDivElement>()
+  tabsContainerRef = createRef<HTMLDivElement>()
+
+  tabCenters: number[] | null = null
+  reorderingTabKey: Key | null = null
+
+  autoScrollDirection: -1 | 1 = -1
+  autoScrollIntervalId: number | undefined
+  scrollThrottleTimeoutId: number | undefined
 
   constructor(props: TabBarProps<T>) {
     super(props)
 
     this.state = {
-      scrollLeft: 0,
-      reorderingTabKey: null,
+      beginOverflow: false,
+      endOverflow: false,
       reorderingPermutation: null,
-      tabCenters: null,
-    }
-  }
-
-  componentDidUpdate(prevProps: TabBarProps<T>, prevState: TabBarState) {
-    if (prevProps.selectedTabId !== this.props.selectedTabId) {
-      this.scrollTabIntoView(this.props.selectedTabId ?? 0)
-    }
-
-    if (
-      this.tabsContainer.current != null &&
-      prevState.scrollLeft !== this.state.scrollLeft
-    ) {
-      this.tabsContainer.current.scrollLeft = this.state.scrollLeft
-    }
-
-    if (
-      this.state.tabCenters == null ||
-      prevState.reorderingPermutation !== this.state.reorderingPermutation
-    ) {
-      this.setState({
-        tabCenters: this.getTabElements().map(
-          el => el.offsetLeft + el.offsetWidth / 2
-        ),
-      })
     }
   }
 
   componentDidMount() {
     document.addEventListener('mouseup', this.handleMouseUp)
     document.addEventListener('mousemove', this.handleMouseMove)
+
+    this.handleScroll()
   }
 
   componentWillUnmount() {
@@ -86,49 +77,61 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
     document.removeEventListener('mousemove', this.handleMouseMove)
   }
 
+  componentDidUpdate(prevProps: TabBarProps<T>, prevState: TabBarState) {
+    if (prevProps.currentTabKey !== this.props.currentTabKey) {
+      this.scrollTabIntoView(this.props.currentTabKey ?? 0)
+    }
+
+    if (
+      this.tabCenters == null ||
+      prevState.reorderingPermutation !== this.state.reorderingPermutation
+    ) {
+      this.tabCenters = this.getTabElements().map(
+        el => el.offsetLeft + el.offsetWidth / 2
+      )
+    }
+  }
+
   getTabElements(): HTMLElement[] {
-    if (this.tabsContainer.current == null) return []
+    if (this.tabsContainerRef.current == null) return []
 
     return [
-      ...this.tabsContainer.current.querySelectorAll('.portui-tabs > *'),
+      ...this.tabsContainerRef.current.querySelectorAll('.portui-tabs > *'),
     ] as HTMLElement[]
   }
 
   getTabElementByKey(tabKey: Key): HTMLElement | undefined {
-    if (this.props.tabs == null || this.tabsContainer.current == null) return
+    if (this.props.tabs == null || this.tabsContainerRef.current == null) return
 
     let index = this.props.tabs.findIndex(tab => tab.tabKey === tabKey)
-    let tabElement = this.tabsContainer.current
+    let tabElement = this.tabsContainerRef.current
       .querySelectorAll('.portui-tabs > *')
       .item(index) as HTMLElement
 
     return tabElement
   }
 
-  scrollTo(scrollLeft: number) {
-    if (this.tabsContainer.current == null) return
+  scrollTo(scrollLeft: number, smooth: boolean = false) {
+    if (this.tabsContainerRef.current == null) return
 
-    this.setState({
-      scrollLeft: Math.min(
-        this.tabsContainer.current.scrollWidth -
-          this.tabsContainer.current.clientWidth,
-        Math.max(0, scrollLeft)
-      ),
+    this.tabsContainerRef.current.scrollTo({
+      left: scrollLeft,
+      behavior: smooth ? 'smooth' : 'auto',
     })
   }
 
   scrollTabIntoView(tabKey: Key) {
     let tabElement = this.getTabElementByKey(tabKey)
 
-    if (tabElement != null && this.tabsContainer.current != null) {
+    if (tabElement != null && this.tabsContainerRef.current != null) {
       scrollIntoView(tabElement, {
         scrollMode: 'if-needed',
-        boundary: this.tabsContainer.current,
+        boundary: this.tabsContainerRef.current,
         behavior: actions => {
           for (let action of actions) {
-            if (action.el !== this.tabsContainer.current) continue
+            if (action.el !== this.tabsContainerRef.current) continue
 
-            this.scrollTo(action.left)
+            this.scrollTo(action.left, true)
             break
           }
         },
@@ -136,33 +139,73 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
     }
   }
 
+  startAutoscrolling(direction: -1 | 1) {
+    if (
+      this.autoScrollIntervalId != null &&
+      this.autoScrollDirection === direction
+    )
+      return
+
+    let {autoScrollStep = 50, autoScrollInterval = 200} = this.props
+
+    clearInterval(this.autoScrollIntervalId)
+
+    this.autoScrollDirection = direction
+    this.autoScrollIntervalId = setInterval(() => {
+      if (this.tabsContainerRef.current == null) return
+
+      this.scrollTo(
+        this.tabsContainerRef.current.scrollLeft + direction * autoScrollStep,
+        true
+      )
+    }, autoScrollInterval)
+  }
+
+  stopAutoscrolling() {
+    if (this.autoScrollIntervalId != null) {
+      clearInterval(this.autoScrollIntervalId)
+      this.autoScrollIntervalId = undefined
+    }
+  }
+
   handleWheel = (evt: WheelEvent) => {
-    if (this.tabsContainer.current == null || !this.props.allowWheelScroll)
+    if (this.tabsContainerRef.current == null || !this.props.allowWheelScroll)
       return
 
     evt.preventDefault()
 
-    let delta = evt.deltaX !== 0 ? evt.deltaX : evt.deltaY
-    this.scrollTo(this.state.scrollLeft + delta)
+    this.scrollTo(this.tabsContainerRef.current?.scrollLeft + evt.deltaY)
+  }
+
+  handleScroll = () => {
+    clearTimeout(this.scrollThrottleTimeoutId)
+
+    this.scrollThrottleTimeoutId = setTimeout(() => {
+      let el = this.tabsContainerRef.current
+      if (el == null) return
+
+      this.setState({
+        beginOverflow: el.scrollLeft > 0,
+        endOverflow: Math.ceil(el.scrollLeft) < el.scrollWidth - el.clientWidth,
+      })
+    }, 200)
   }
 
   handleTabMouseDown = (tabKey: Key, evt: ReactMouseEvent) => {
     if (
       evt.button !== 0 ||
       !this.props.allowReorder ||
-      this.state.reorderingTabKey != null
+      this.reorderingTabKey != null
     )
       return
 
     evt.preventDefault()
 
-    this.setState({
-      reorderingTabKey: tabKey,
-    })
+    this.reorderingTabKey = tabKey
   }
 
   handleMouseUp = (evt: MouseEvent) => {
-    if (evt.button !== 0 || this.state.reorderingTabKey == null) return
+    if (evt.button !== 0 || this.reorderingTabKey == null) return
 
     evt.preventDefault()
 
@@ -174,43 +217,58 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
       })
     }
 
+    this.reorderingTabKey = null
+
+    this.stopAutoscrolling()
     this.setState({
-      reorderingTabKey: null,
       reorderingPermutation: null,
     })
   }
 
   handleMouseMove = (evt: MouseEvent) => {
     if (
-      this.tabsContainer.current == null ||
-      this.props.tabs == null ||
-      this.state.reorderingTabKey == null ||
-      this.state.tabCenters == null
+      this.tabsContainerRef.current == null ||
+      this.reorderingTabKey == null ||
+      this.tabCenters == null
     )
       return
 
     evt.preventDefault()
 
-    let tabIndex = this.props.tabs.findIndex(
-      tab => tab.tabKey === this.state.reorderingTabKey
-    )
+    let {tabs = [], autoScrollAreaSize = 50} = this.props
+    let tabIndex = tabs.findIndex(tab => tab.tabKey === this.reorderingTabKey)
     if (tabIndex < 0) return
 
-    let tabsContainerLeft = this.tabsContainer.current.getBoundingClientRect()
-      .left
+    let tabsContainerRect = this.tabsContainerRef.current.getBoundingClientRect()
     let mouseLeft =
-      evt.clientX - tabsContainerLeft + this.tabsContainer.current.scrollLeft
-    let permutation =
-      this.state.reorderingPermutation ?? this.props.tabs.map((_, i) => i)
+      evt.clientX -
+      tabsContainerRect.left +
+      this.tabsContainerRef.current?.scrollLeft
+    let autoScrollDirection: -1 | 0 | 1 =
+      mouseLeft - this.tabsContainerRef.current?.scrollLeft <
+      tabsContainerRect.left + autoScrollAreaSize
+        ? -1
+        : mouseLeft - this.tabsContainerRef.current?.scrollLeft >
+          tabsContainerRect.right - autoScrollAreaSize
+        ? 1
+        : 0
+
+    let permutation = this.state.reorderingPermutation ?? tabs.map((_, i) => i)
     let tabPermutationIndex = permutation.indexOf(tabIndex)
     permutation = permutation.filter(i => i !== tabIndex)
 
-    let insertBeforeIndex = this.state.tabCenters
+    let insertBeforeIndex = this.tabCenters
       .filter((_, i) => i !== tabPermutationIndex)
       .findIndex((center, i) => mouseLeft < center)
-    if (insertBeforeIndex < 0) insertBeforeIndex = this.state.tabCenters.length
+    if (insertBeforeIndex < 0) insertBeforeIndex = this.tabCenters.length
 
     permutation.splice(insertBeforeIndex, 0, tabIndex)
+
+    if (autoScrollDirection === 0) {
+      this.stopAutoscrolling()
+    } else {
+      this.startAutoscrolling(autoScrollDirection)
+    }
 
     this.setState({
       reorderingPermutation: permutation,
@@ -219,13 +277,16 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
 
   render() {
     let {props, state} = this
-    let {TabComponent = () => null} = props
+    let {Tab = () => null} = props
 
     return (
       <div
         ref={this.elementRef}
         id={props.id}
-        className={`portui-tab-bar ${props.className ?? ''}`}
+        className={classnames('portui-tab-bar', props.className ?? '', {
+          'portui-beginoverflow': state.beginOverflow,
+          'portui-endoverflow': state.endOverflow,
+        })}
         style={{
           display: 'grid',
           gridTemplate: '100% / 100%',
@@ -233,16 +294,17 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
         }}
       >
         <div
-          ref={this.tabsContainer}
+          ref={this.tabsContainerRef}
           className="portui-tabs"
           style={{
             position: 'relative',
             display: 'flex',
             flexWrap: 'nowrap',
             alignItems: 'stretch',
-            overflow: 'hidden',
+            overflow: 'auto',
           }}
           onWheel={this.handleWheel}
+          onScroll={this.handleScroll}
         >
           {(props.tabs ?? [])
             .map((tab, i, tabs) =>
@@ -251,12 +313,12 @@ export default class TabBar<T> extends Component<TabBarProps<T>, TabBarState> {
                 : tabs[state.reorderingPermutation[i]]
             )
             .map((tab, i) => (
-              <TabComponent
+              <Tab
                 {...tab}
                 key={tab.tabKey}
-                selected={
-                  props.selectedTabId != null
-                    ? props.selectedTabId === tab.tabKey
+                current={
+                  props.currentTabKey != null
+                    ? props.currentTabKey === tab.tabKey
                     : i === 0
                 }
                 onMouseDown={this.handleTabMouseDown}
