@@ -5,6 +5,7 @@ import {
   ReactNode,
   MouseEvent as ReactMouseEvent,
 } from 'react'
+import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
 export interface SplitContainerProps extends PortuiComponentProps {
@@ -122,7 +123,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
       <div
         ref={this.elementRef}
         id={id}
-        className={`portui-split-container ${className}`}
+        className={classnames('portui-split-container', className)}
         style={{
           display: 'grid',
           gridTemplate: `${gridTemplateRows} / ${gridTemplateColumns}`,
