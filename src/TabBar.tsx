@@ -32,6 +32,7 @@ export interface TabBarProps<T extends TabData> extends PortuiComponentProps {
   tabs?: Array<T>
 
   Tab?: ComponentType<TabProps & T>
+  onScroll?: (evt: UIEvent) => any
   onReorder?: (evt: {tabs: Array<T>}) => any
 }
 
@@ -177,7 +178,11 @@ export default class TabBar<T extends TabData> extends Component<
     this.scrollTo(this.tabsContainerRef.current?.scrollLeft + evt.deltaY)
   }
 
-  handleScroll = () => {
+  handleScroll = (evt?: UIEvent) => {
+    if (evt != null) {
+      this.props.onScroll?.(evt)
+    }
+
     clearTimeout(this.scrollThrottleTimeoutId)
 
     this.scrollThrottleTimeoutId = setTimeout(() => {
