@@ -14,7 +14,7 @@ import {PortuiComponentProps} from './main'
 
 export interface ItemData {
   itemKey: Key
-  dragData: string
+  dragData?: string
 }
 
 export interface ItemProps extends ItemData {
@@ -180,7 +180,10 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     let item = this.getItemByKey(itemKey)
     if (item == null) return
 
-    evt.dataTransfer.setData(this.props.dragDataFormat, item.dragData)
+    evt.dataTransfer.setData(
+      this.props.dragDataFormat,
+      item.dragData ?? item.itemKey.toString()
+    )
 
     this.setState({
       reorderingItemKey: itemKey,
