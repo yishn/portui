@@ -28,13 +28,15 @@ let createStory = (itemsCount: number) => () => {
       allowWheelScroll={boolean('useWheelToScroll', true)}
       items={items}
       Item={props => (
-        <a
+        <div
+          draggable
           style={{
             flex: '0 0 auto',
             padding: '.2rem .5rem',
+            borderRight: '1px solid rgba(0, 0, 0, .1)',
+            borderBottom: '1px solid rgba(0, 0, 0, .1)',
             background: props.reordering ? 'rgba(0, 0, 0, .1)' : undefined,
           }}
-          href="#"
           title={props.title}
           onClick={evt => evt.preventDefault()}
           onMouseDown={evt => {
@@ -47,7 +49,7 @@ let createStory = (itemsCount: number) => () => {
           }}
         >
           {props.title}
-        </a>
+        </div>
       )}
       onReorder={evt => {
         setItems(evt.items)

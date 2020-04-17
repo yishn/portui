@@ -34,13 +34,13 @@ export interface ReorderableFlexProps<T extends ItemData>
 
   Item?: ComponentType<ItemProps & T>
   onScroll?: (evt: UIEvent) => any
-  onReorder?: (evt: {items: Array<T>}) => any
+  onReorder?: (evt: {item: T; items: Array<T>}) => any
 }
 
 interface ReorderableFlexState {
   beginOverflow: boolean
   endOverflow: boolean
-  reorderingPermutation: number[] | null
+  reordering: boolean
   reorderingItemKey: Key | null
 }
 
@@ -61,7 +61,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     this.state = {
       beginOverflow: false,
       endOverflow: false,
-      reorderingPermutation: null,
+      reordering: false,
       reorderingItemKey: null,
     }
   }
@@ -86,13 +86,9 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     document.removeEventListener('mousemove', this.handleMouseMove)
   }
 
-  componentDidUpdate(
-    prevProps: ReorderableFlexProps<T>,
-    prevState: ReorderableFlexState
-  ) {
+  componentDidUpdate(prevProps: ReorderableFlexProps<T>) {
     if (
       this.itemCenters == null ||
-      prevState.reorderingPermutation !== this.state.reorderingPermutation ||
       !prevProps.vertical !== !this.props.vertical
     ) {
       this.itemCenters = this.getItemElements().map(el =>
@@ -229,17 +225,9 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
 
     evt.preventDefault()
 
-    if (this.state.reorderingPermutation != null) {
-      this.props.onReorder?.({
-        items: this.state.reorderingPermutation.map(
-          i => (this.props.items ?? [])[i]
-        ),
-      })
-    }
-
     this.stopAutoscrolling()
     this.setState({
-      reorderingPermutation: null,
+      reordering: false,
       reorderingItemKey: null,
     })
   }
@@ -259,12 +247,15 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
       item => item.itemKey === this.state.reorderingItemKey
     )
     if (itemIndex < 0) return
+    let item = items[itemIndex]
 
     let clientRect = this.elementRef.current.getBoundingClientRect()
     let [clientBegin, clientEnd] = [
       [clientRect.left, clientRect.right],
       [clientRect.top, clientRect.bottom],
     ][+!!this.props.vertical]
+
+    // Handle autoscroll
 
     let mousePosition =
       (this.props.vertical ? evt.clientY : evt.clientX) -
@@ -277,26 +268,28 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         ? 1
         : 0
 
-    let permutation = this.state.reorderingPermutation ?? items.map((_, i) => i)
-    let itemPermutationIndex = permutation.indexOf(itemIndex)
-    permutation = permutation.filter(i => i !== itemIndex)
-
-    let insertBeforeIndex = this.itemCenters
-      .filter((_, i) => i !== itemPermutationIndex)
-      .findIndex((center, i) => mousePosition < center)
-    if (insertBeforeIndex < 0) insertBeforeIndex = this.itemCenters.length
-
-    permutation.splice(insertBeforeIndex, 0, itemIndex)
-
     if (autoScrollDirection === 0) {
       this.stopAutoscrolling()
     } else {
       this.startAutoscrolling(autoScrollDirection)
     }
 
-    this.setState({
-      reorderingPermutation: permutation,
-    })
+    let insertBeforeIndex = this.itemCenters
+      .filter((_, i) => i !== itemIndex)
+      .findIndex(center => mousePosition < center)
+    if (insertBeforeIndex < 0) insertBeforeIndex = this.itemCenters.length - 1
+
+    if (insertBeforeIndex !== itemIndex) {
+      let permutation = items.filter(x => x !== item)
+      permutation.splice(insertBeforeIndex, 0, item)
+
+      this.props.onReorder?.({
+        item,
+        items: permutation,
+      })
+    }
+
+    this.setState({reordering: true})
   }
 
   render() {
@@ -327,20 +320,16 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         onWheel={this.handleWheel}
         onScroll={this.handleScroll}
       >
-        {(props.items ?? [])
-          .map((item, i, items) =>
-            state.reorderingPermutation == null
-              ? item
-              : items[state.reorderingPermutation[i]]
-          )
-          .map(item => (
-            <Item
-              {...item}
-              key={item.itemKey}
-              reordering={item.itemKey === this.state.reorderingItemKey}
-              onMouseDown={this.handleItemMouseDown}
-            />
-          ))}
+        {(props.items ?? []).map(item => (
+          <Item
+            {...item}
+            key={item.itemKey}
+            reordering={
+              state.reordering && item.itemKey === this.state.reorderingItemKey
+            }
+            onMouseDown={this.handleItemMouseDown}
+          />
+        ))}
       </div>
     )
   }
