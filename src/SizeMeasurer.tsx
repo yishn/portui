@@ -1,7 +1,7 @@
 import {createElement, createRef, Component, RefObject, ReactNode} from 'react'
 
-const measureCallbacks = new WeakMap<Element, () => void>()
-const resizeObserver = new (window as any).ResizeObserver(
+let measureCallbacks = new WeakMap<Element, () => void>()
+let resizeObserver = new (window as any).ResizeObserver(
   (entries: {target: Element}[]) => {
     for (let {target} of entries) {
       measureCallbacks.get(target)?.()
