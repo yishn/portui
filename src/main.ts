@@ -5,5 +5,3 @@ export interface PortuiComponentProps {
   className?: string
   style?: CSSProperties
 }
-
-export * from './SplitContainer'

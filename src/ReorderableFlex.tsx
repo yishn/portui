@@ -33,11 +33,11 @@ export interface ReorderableFlexProps<T extends ItemData>
   autoScrollInterval?: number
   autoScrollStep?: number
   dragDataFormat?: string
-  items?: Array<T>
+  items?: T[]
 
   Item?: ComponentType<ItemProps & T>
   onScroll?: (evt: UIEvent) => any
-  onReorder?: (evt: {item: T; items: Array<T>}) => any
+  onReorder?: (evt: {item: T; items: T[]}) => any
 }
 
 interface ReorderableFlexState {

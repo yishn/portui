@@ -7,7 +7,7 @@
     "jsx": "react",
     "jsxFactory": "createElement",
     "types": [],
-    "lib": ["ES6", "DOM", "ES2017", "DOM.Iterable"]
+    "lib": ["DOM", "DOM.Iterable", "ES2017"]
   },
   "include": ["./src/**/*"]
 }
