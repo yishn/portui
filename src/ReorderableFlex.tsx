@@ -5,8 +5,8 @@ import {
   ComponentType,
   Key,
   WheelEvent,
-  MouseEvent as ReactMouseEvent,
   UIEvent,
+  DragEvent as ReactDragEvent,
 } from 'react'
 import classnames from 'classnames'
 import scrollIntoView from 'scroll-into-view-if-needed'
@@ -14,12 +14,14 @@ import {PortuiComponentProps} from './main'
 
 export interface ItemData {
   itemKey: Key
+  dragData: string
 }
 
 export interface ItemProps extends ItemData {
   reordering: boolean
 
-  onMouseDown: (itemKey: Key, evt: ReactMouseEvent) => void
+  onDragStart: (itemKey: Key, evt: ReactDragEvent) => void
+  onDragEnd: (itemKey: Key, evt: ReactDragEvent) => void
 }
 
 export interface ReorderableFlexProps<T extends ItemData>
@@ -30,6 +32,7 @@ export interface ReorderableFlexProps<T extends ItemData>
   autoScrollAreaSize?: number
   autoScrollInterval?: number
   autoScrollStep?: number
+  dragDataFormat?: string
   items?: Array<T>
 
   Item?: ComponentType<ItemProps & T>
@@ -40,7 +43,6 @@ export interface ReorderableFlexProps<T extends ItemData>
 interface ReorderableFlexState {
   beginOverflow: boolean
   endOverflow: boolean
-  reordering: boolean
   reorderingItemKey: Key | null
 }
 
@@ -51,8 +53,6 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
   elementRef = createRef<HTMLDivElement>()
   itemCenters: number[] | null = null
 
-  autoScrollDirection: -1 | 1 = -1
-  autoScrollIntervalId: number | undefined
   scrollThrottleTimeoutId: number | undefined
 
   constructor(props: ReorderableFlexProps<T>) {
@@ -61,7 +61,6 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     this.state = {
       beginOverflow: false,
       endOverflow: false,
-      reordering: false,
       reorderingItemKey: null,
     }
   }
@@ -75,15 +74,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
   }
 
   componentDidMount() {
-    document.addEventListener('mouseup', this.handleMouseUp)
-    document.addEventListener('mousemove', this.handleMouseMove)
-
     this.handleScroll()
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('mouseup', this.handleMouseUp)
-    document.removeEventListener('mousemove', this.handleMouseMove)
   }
 
   componentDidUpdate(prevProps: ReorderableFlexProps<T>) {
@@ -107,6 +98,10 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         '.portui-reorderable-flex > *'
       ),
     ] as HTMLElement[]
+  }
+
+  getItemByKey(itemKey: Key): T | undefined {
+    return this.props.items?.find(item => item.itemKey === itemKey)
   }
 
   getItemElementByKey(itemKey: Key): HTMLElement | undefined {
@@ -148,32 +143,6 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     }
   }
 
-  startAutoscrolling(direction: -1 | 1) {
-    if (
-      this.autoScrollIntervalId != null &&
-      this.autoScrollDirection === direction
-    )
-      return
-
-    let {autoScrollStep = 50, autoScrollInterval = 200} = this.props
-
-    clearInterval(this.autoScrollIntervalId)
-
-    this.autoScrollDirection = direction
-    this.autoScrollIntervalId = setInterval(() => {
-      if (this.elementRef.current == null) return
-
-      this.scrollTo(this.scrollPosition + direction * autoScrollStep, true)
-    }, autoScrollInterval)
-  }
-
-  stopAutoscrolling() {
-    if (this.autoScrollIntervalId != null) {
-      clearInterval(this.autoScrollIntervalId)
-      this.autoScrollIntervalId = undefined
-    }
-  }
-
   handleWheel = (evt: WheelEvent) => {
     if (!this.props.allowWheelScroll) return
 
@@ -205,34 +174,32 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     }, 200)
   }
 
-  handleItemMouseDown = (itemKey: Key, evt: ReactMouseEvent) => {
-    if (
-      evt.button !== 0 ||
-      !this.props.allowReorder ||
-      this.state.reorderingItemKey != null
-    )
-      return
+  handleItemDragStart = (itemKey: Key, evt: ReactDragEvent) => {
+    if (!this.props.allowReorder || this.props.dragDataFormat == null) return
 
-    evt.preventDefault()
+    let item = this.getItemByKey(itemKey)
+    if (item == null) return
+
+    evt.dataTransfer.setData(this.props.dragDataFormat, item.dragData)
 
     this.setState({
       reorderingItemKey: itemKey,
     })
   }
 
-  handleMouseUp = (evt: MouseEvent) => {
-    if (evt.button !== 0 || this.state.reorderingItemKey == null) return
+  handleItemDragEnd = (itemKey: Key, evt: ReactDragEvent) => {
+    this.setState({reorderingItemKey: null})
+  }
+
+  handleDragOver = (evt: ReactDragEvent) => {
+    if (
+      this.props.dragDataFormat == null ||
+      !evt.dataTransfer.types.includes(this.props.dragDataFormat)
+    )
+      return
 
     evt.preventDefault()
 
-    this.stopAutoscrolling()
-    this.setState({
-      reordering: false,
-      reorderingItemKey: null,
-    })
-  }
-
-  handleMouseMove = (evt: MouseEvent) => {
     if (
       this.elementRef.current == null ||
       this.state.reorderingItemKey == null ||
@@ -240,9 +207,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     )
       return
 
-    evt.preventDefault()
-
-    let {items = [], autoScrollAreaSize = 50} = this.props
+    let {items = []} = this.props
     let itemIndex = items.findIndex(
       item => item.itemKey === this.state.reorderingItemKey
     )
@@ -250,29 +215,12 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     let item = items[itemIndex]
 
     let clientRect = this.elementRef.current.getBoundingClientRect()
-    let [clientBegin, clientEnd] = [
-      [clientRect.left, clientRect.right],
-      [clientRect.top, clientRect.bottom],
-    ][+!!this.props.vertical]
-
-    // Handle autoscroll
+    let clientBegin = [clientRect.left, clientRect.top][+!!this.props.vertical]
 
     let mousePosition =
       (this.props.vertical ? evt.clientY : evt.clientX) -
       clientBegin +
       this.scrollPosition
-    let autoScrollDirection: -1 | 0 | 1 =
-      mousePosition - this.scrollPosition < clientBegin + autoScrollAreaSize
-        ? -1
-        : mousePosition - this.scrollPosition > clientEnd - autoScrollAreaSize
-        ? 1
-        : 0
-
-    if (autoScrollDirection === 0) {
-      this.stopAutoscrolling()
-    } else {
-      this.startAutoscrolling(autoScrollDirection)
-    }
 
     let insertBeforeIndex = this.itemCenters
       .filter((_, i) => i !== itemIndex)
@@ -288,8 +236,10 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         items: permutation,
       })
     }
+  }
 
-    this.setState({reordering: true})
+  handleDrop = (evt: DragEvent | ReactDragEvent) => {
+    this.setState({reorderingItemKey: null})
   }
 
   render() {
@@ -319,15 +269,16 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         }}
         onWheel={this.handleWheel}
         onScroll={this.handleScroll}
+        onDragOver={this.handleDragOver}
+        onDrop={this.handleDrop}
       >
         {(props.items ?? []).map(item => (
           <Item
             {...item}
             key={item.itemKey}
-            reordering={
-              state.reordering && item.itemKey === this.state.reorderingItemKey
-            }
-            onMouseDown={this.handleItemMouseDown}
+            reordering={item.itemKey === this.state.reorderingItemKey}
+            onDragStart={this.handleItemDragStart}
+            onDragEnd={this.handleItemDragEnd}
           />
         ))}
       </div>
