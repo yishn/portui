@@ -2,8 +2,8 @@ import {
   createElement,
   createRef,
   Component,
-  ComponentType,
   Key,
+  ReactNode,
   WheelEvent,
   UIEvent,
   DragEvent as ReactDragEvent,
@@ -12,7 +12,7 @@ import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
 export interface ItemData {
-  itemKey: Key
+  key: Key
   dragData?: string
 }
 
@@ -34,7 +34,7 @@ export interface ReorderableLinearFlexProps<T extends ItemData>
   dragDataFormat?: string
   items?: T[]
 
-  Item?: ComponentType<ItemProps & T>
+  renderItem?: (props: ItemProps & T) => ReactNode
   onScroll?: (evt: UIEvent) => any
   onReorder?: (evt: {item: T; items: T[]}) => any
 }
@@ -99,13 +99,13 @@ export default class ReorderableLinearFlex<
   }
 
   getItemByKey(itemKey: Key): T | undefined {
-    return this.props.items?.find(item => item.itemKey === itemKey)
+    return this.props.items?.find(item => item.key === itemKey)
   }
 
   getItemElementByKey(itemKey: Key): HTMLElement | undefined {
     if (this.props.items == null || this.elementRef.current == null) return
 
-    let index = this.props.items.findIndex(item => item.itemKey === itemKey)
+    let index = this.props.items.findIndex(item => item.key === itemKey)
     let itemElement = this.elementRef.current
       .querySelectorAll('.portui-reorderable-linear-flex > *')
       .item(index) as HTMLElement
@@ -160,7 +160,7 @@ export default class ReorderableLinearFlex<
 
     evt.dataTransfer.setData(
       this.props.dragDataFormat,
-      item.dragData ?? item.itemKey.toString()
+      item.dragData ?? item.key.toString()
     )
 
     this.setState({
@@ -190,7 +190,7 @@ export default class ReorderableLinearFlex<
 
     let {items = []} = this.props
     let itemIndex = items.findIndex(
-      item => item.itemKey === this.state.reorderingItemKey
+      item => item.key === this.state.reorderingItemKey
     )
     if (itemIndex < 0) return
     let item = items[itemIndex]
@@ -225,7 +225,6 @@ export default class ReorderableLinearFlex<
 
   render() {
     let {props, state} = this
-    let {Item = () => null} = props
 
     return (
       <div
@@ -253,15 +252,14 @@ export default class ReorderableLinearFlex<
         onDragOver={this.handleDragOver}
         onDrop={this.handleDrop}
       >
-        {(props.items ?? []).map(item => (
-          <Item
-            {...item}
-            key={item.itemKey}
-            reordering={item.itemKey === this.state.reorderingItemKey}
-            onDragStart={this.handleItemDragStart}
-            onDragEnd={this.handleItemDragEnd}
-          />
-        ))}
+        {(props.items ?? []).map(item =>
+          props.renderItem?.({
+            ...item,
+            reordering: item.key === this.state.reorderingItemKey,
+            onDragStart: this.handleItemDragStart,
+            onDragEnd: this.handleItemDragEnd,
+          })
+        )}
       </div>
     )
   }
