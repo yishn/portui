@@ -1,4 +1,4 @@
-import {createElement, useState} from 'react'
+import {createElement} from 'react'
 import {action} from '@storybook/addon-actions'
 import {withKnobs, number} from '@storybook/addon-knobs'
 import SizeMeasurer from '../src/SizeMeasurer'
@@ -13,9 +13,9 @@ export const Default = () => {
   return (
     <SizeMeasurer<HTMLDivElement>
       throttle={number('throttle', 0)}
-      render={({elementRef, width, height}) => (
+      render={({ref, width, height}) => (
         <div
-          ref={elementRef}
+          ref={ref}
           style={{
             background: 'rgba(0, 0, 0, .1)',
             overflow: 'hidden',

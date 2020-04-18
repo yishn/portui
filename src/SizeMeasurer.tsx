@@ -13,7 +13,7 @@ export interface SizeMeasurerProps<T extends Element> {
   throttle?: number
   measureSize?: (el: T) => {width: number; height: number}
   render?: (props: {
-    elementRef: RefObject<T>
+    ref: RefObject<T>
     width?: number
     height?: number
   }) => ReactNode
@@ -75,7 +75,7 @@ export default class SizeMeasurer<T extends Element> extends Component<
   render() {
     return (
       this.props.render?.({
-        elementRef: this.elementRef,
+        ref: this.elementRef,
         width: this.state.width,
         height: this.state.height,
       }) ?? null

@@ -1,11 +1,11 @@
 import {createElement, useState} from 'react'
 import {action} from '@storybook/addon-actions'
 import {withKnobs, boolean} from '@storybook/addon-knobs'
-import ReorderableFlex, {ItemProps} from '../src/ReorderableFlex'
+import ReorderableLinearFlex, {ItemProps} from '../src/ReorderableLinearFlex'
 
 export default {
-  title: 'ReorderableFlex',
-  component: ReorderableFlex,
+  title: 'ReorderableLinearFlex',
+  component: ReorderableLinearFlex,
   decorators: [withKnobs],
 }
 
@@ -44,7 +44,7 @@ let createStory = (itemsCount: number) => () => {
   )
 
   return (
-    <ReorderableFlex
+    <ReorderableLinearFlex
       style={{
         background: 'rgba(0, 0, 0, .1)',
         maxHeight: 200,

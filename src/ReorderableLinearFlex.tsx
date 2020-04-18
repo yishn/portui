@@ -9,7 +9,6 @@ import {
   DragEvent as ReactDragEvent,
 } from 'react'
 import classnames from 'classnames'
-import scrollIntoView from 'scroll-into-view-if-needed'
 import {PortuiComponentProps} from './main'
 
 export interface ItemData {
@@ -24,7 +23,7 @@ export interface ItemProps extends ItemData {
   onDragEnd: (itemKey: Key, evt: ReactDragEvent) => void
 }
 
-export interface ReorderableFlexProps<T extends ItemData>
+export interface ReorderableLinearFlexProps<T extends ItemData>
   extends PortuiComponentProps {
   vertical?: boolean
   allowReorder?: boolean
@@ -40,22 +39,21 @@ export interface ReorderableFlexProps<T extends ItemData>
   onReorder?: (evt: {item: T; items: T[]}) => any
 }
 
-interface ReorderableFlexState {
+interface ReorderableLinearFlexState {
   beginOverflow: boolean
   endOverflow: boolean
   reorderingItemKey: Key | null
 }
 
-export default class ReorderableFlex<T extends ItemData> extends Component<
-  ReorderableFlexProps<T>,
-  ReorderableFlexState
-> {
+export default class ReorderableLinearFlex<
+  T extends ItemData
+> extends Component<ReorderableLinearFlexProps<T>, ReorderableLinearFlexState> {
   elementRef = createRef<HTMLDivElement>()
   itemCenters: number[] | null = null
 
   scrollThrottleTimeoutId: number | undefined
 
-  constructor(props: ReorderableFlexProps<T>) {
+  constructor(props: ReorderableLinearFlexProps<T>) {
     super(props)
 
     this.state = {
@@ -77,7 +75,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
     this.handleScroll()
   }
 
-  componentDidUpdate(prevProps: ReorderableFlexProps<T>) {
+  componentDidUpdate(prevProps: ReorderableLinearFlexProps<T>) {
     if (
       this.itemCenters == null ||
       !prevProps.vertical !== !this.props.vertical
@@ -95,7 +93,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
 
     return [
       ...this.elementRef.current.querySelectorAll(
-        '.portui-reorderable-flex > *'
+        '.portui-reorderable-linear-flex > *'
       ),
     ] as HTMLElement[]
   }
@@ -109,46 +107,26 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
 
     let index = this.props.items.findIndex(item => item.itemKey === itemKey)
     let itemElement = this.elementRef.current
-      .querySelectorAll('.portui-reorderable-flex > *')
+      .querySelectorAll('.portui-reorderable-linear-flex > *')
       .item(index) as HTMLElement
 
     return itemElement
   }
 
-  scrollTo(scrollPosition: number, smooth: boolean = false) {
-    if (this.elementRef.current == null) return
-
-    this.elementRef.current.scrollTo({
-      [this.props.vertical ? 'top' : 'left']: scrollPosition,
-      behavior: smooth ? 'smooth' : 'auto',
-    })
-  }
-
-  scrollItemIntoView(itemKey: Key) {
-    let itemElement = this.getItemElementByKey(itemKey)
-
-    if (itemElement != null && this.elementRef.current != null) {
-      scrollIntoView(itemElement, {
-        scrollMode: 'if-needed',
-        boundary: this.elementRef.current,
-        behavior: actions => {
-          for (let action of actions) {
-            if (action.el !== this.elementRef.current) continue
-
-            this.scrollTo(this.props.vertical ? action.top : action.left, true)
-            break
-          }
-        },
-      })
-    }
-  }
-
   handleWheel = (evt: WheelEvent) => {
-    if (!this.props.allowWheelScroll) return
+    if (
+      this.props.vertical ||
+      !this.props.allowWheelScroll ||
+      this.elementRef.current == null ||
+      evt.deltaY === 0
+    )
+      return
 
     evt.preventDefault()
 
-    this.scrollTo(this.scrollPosition + evt.deltaY)
+    this.elementRef.current.scrollTo({
+      left: this.scrollPosition + evt.deltaY,
+    })
   }
 
   handleScroll = (evt?: UIEvent) => {
@@ -254,7 +232,7 @@ export default class ReorderableFlex<T extends ItemData> extends Component<
         ref={this.elementRef}
         id={props.id}
         className={classnames(
-          'portui-reorderable-flex',
+          'portui-reorderable-linear-flex',
           props.className ?? '',
           {
             'portui-beginoverflow': state.beginOverflow,
