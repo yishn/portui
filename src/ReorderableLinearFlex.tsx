@@ -28,9 +28,6 @@ export interface ReorderableLinearFlexProps<T extends ItemData>
   vertical?: boolean
   allowReorder?: boolean
   allowWheelScroll?: boolean
-  autoScrollAreaSize?: number
-  autoScrollInterval?: number
-  autoScrollStep?: number
   dragDataFormat?: string
   items?: T[]
 
