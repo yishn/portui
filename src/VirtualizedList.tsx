@@ -11,6 +11,7 @@ import {PortuiComponentProps} from './main'
 
 export interface ItemProps {
   style: CSSProperties
+  sticky: boolean
 }
 
 export interface VirtualizedListProps<T extends object>
@@ -19,6 +20,7 @@ export interface VirtualizedListProps<T extends object>
   itemSize: number
   itemCount?: number
   horizontal?: boolean
+  stickyIndices?: number[]
 
   getItem?: (index: number) => T | undefined
   renderItem?: (item: T & ItemProps, index: number) => ReactNode
@@ -115,7 +117,7 @@ export default class VirtualizedList<T extends object> extends Component<
         <div
           className="portui-placeholder"
           style={{
-            position: 'relative',
+            position: 'absolute',
             [props.horizontal ? 'left' : 'top']: this.scrollSize - 1,
             height: 1,
             width: 1,
@@ -125,15 +127,12 @@ export default class VirtualizedList<T extends object> extends Component<
         />
 
         {(() => {
-          let itemNodes = [] as ReactNode[]
+          let itemNodes: ReactNode[] = []
+          let unusedStickyIndices = [...(props.stickyIndices ?? [])]
 
-          for (
-            let i = state.visibleStartIndex;
-            i >= 0 && i <= state.visibleEndIndex;
-            i++
-          ) {
-            let item = this.props.getItem?.(i)
-            if (item == null) continue
+          let addItemNode = (index: number, sticky: boolean) => {
+            let item = this.props.getItem?.(index)
+            if (item === undefined) return
 
             itemNodes.push(
               this.props.renderItem?.(
@@ -141,18 +140,37 @@ export default class VirtualizedList<T extends object> extends Component<
                   ...item,
                   style: {
                     boxSizing: 'border-box',
-                    position: 'absolute',
+                    position: sticky ? 'sticky' : 'absolute',
                     [props.horizontal ? 'top' : 'left']: 0,
-                    [props.horizontal ? 'bottom' : 'right']: 0,
+                    [props.horizontal ? 'height' : 'width']: '100%',
                     [props.horizontal ? 'left' : 'top']:
-                      i * this.props.itemSize,
+                      index * this.props.itemSize,
                     [props.horizontal ? 'width' : 'height']: this.props
                       .itemSize,
+                    float: 'left',
                   },
+                  sticky,
                 },
-                i
+                index
               )
             )
+          }
+
+          for (
+            let i = state.visibleStartIndex;
+            i >= 0 && i <= state.visibleEndIndex;
+            i++
+          ) {
+            let unusedStickyIndicesIndex = unusedStickyIndices.indexOf(i)
+            if (unusedStickyIndicesIndex >= 0) {
+              unusedStickyIndices.splice(unusedStickyIndicesIndex, 1)
+            }
+
+            addItemNode(i, unusedStickyIndicesIndex >= 0)
+          }
+
+          for (let i of unusedStickyIndices) {
+            addItemNode(i, true)
           }
 
           return itemNodes

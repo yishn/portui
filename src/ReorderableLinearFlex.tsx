@@ -153,7 +153,7 @@ export default class ReorderableLinearFlex<
     if (!this.props.allowReorder || this.props.dragDataFormat == null) return
 
     let item = this.getItemByKey(itemKey)
-    if (item == null) return
+    if (item === undefined) return
 
     evt.dataTransfer.setData(
       this.props.dragDataFormat,

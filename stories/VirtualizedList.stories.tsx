@@ -9,7 +9,7 @@ export default {
   decorators: [withKnobs],
 }
 
-export const Default = () => {
+let createStory = (withStickyItems: boolean) => () => {
   let horizontal = boolean('horizontal', false)
 
   return (
@@ -22,6 +22,7 @@ export const Default = () => {
       mainAxisSize={300}
       itemSize={40}
       itemCount={number('itemCount', 100)}
+      stickyIndices={withStickyItems ? [0, 1] : []}
       getItem={index => ({
         text: `Item ${index + 1}`,
       })}
@@ -34,6 +35,7 @@ export const Default = () => {
             borderRight: '1px solid rgba(0, 0, 0, .1)',
             borderBottom: '1px solid rgba(0, 0, 0, .1)',
             overflow: 'hidden',
+            background: item.sticky ? 'rgba(0, 0, 0, .1)' : undefined,
             lineHeight: '40px',
           }}
         >
@@ -45,3 +47,6 @@ export const Default = () => {
     />
   )
 }
+
+export const Default = createStory(false)
+export const StickyItems = createStory(true)
