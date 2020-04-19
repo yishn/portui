@@ -125,9 +125,9 @@ export default class SplitContainer extends Component<SplitContainerProps> {
         id={id}
         className={classnames('portui-split-container', className)}
         style={{
+          ...style,
           display: 'grid',
           gridTemplate: `${gridTemplateRows} / ${gridTemplateColumns}`,
-          ...style,
         }}
       >
         {!invert && mainContent}

@@ -13,8 +13,6 @@ export interface ItemProps {
   style: CSSProperties
 }
 
-export interface Event {}
-
 export interface VirtualizedListProps<T extends object>
   extends PortuiComponentProps {
   mainAxisSize: number
@@ -107,10 +105,10 @@ export default class VirtualizedList<T extends object> extends Component<
         id={props.id}
         className={classnames('portui-virtualized-list', props.className)}
         style={{
+          ...props.style,
           position: 'relative',
           [props.horizontal ? 'width' : 'height']: props.mainAxisSize,
           overflow: 'auto',
-          ...props.style,
         }}
         onScroll={this.handleScroll}
       >

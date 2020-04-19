@@ -239,13 +239,13 @@ export default class ReorderableLinearFlex<
           }
         )}
         style={{
-          position: 'relative',
-          display: 'flex',
-          flexDirection: props.vertical ? 'column' : 'row',
-          flexWrap: 'nowrap',
           alignItems: 'stretch',
           overflow: 'auto',
-          ...(props.style ?? {}),
+          ...props.style,
+          position: 'relative',
+          display: 'flex',
+          flexWrap: 'nowrap',
+          flexDirection: props.vertical ? 'column' : 'row',
         }}
         onWheel={this.handleWheel}
         onScroll={this.handleScroll}
