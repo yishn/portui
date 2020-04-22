@@ -5,13 +5,18 @@ import {
   ReactNode,
   CSSProperties,
   UIEvent,
+  KeyboardEvent,
+  DetailedHTMLProps,
+  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
+import {wedgeNumber, detectLinearStep} from './helper'
 
 export interface ItemProps {
   style: CSSProperties
   sticky: boolean
+  selected: boolean
 }
 
 export interface VirtualizedListProps<T extends object>
@@ -20,7 +25,9 @@ export interface VirtualizedListProps<T extends object>
   itemSize: number
   itemCount?: number
   horizontal?: boolean
-  stickyIndices?: number[]
+  stickyItemCount?: number
+  selectable?: boolean
+  selectedIndices?: number[]
 
   getItem?: (index: number) => T | undefined
   renderItem?: (item: T & ItemProps, index: number) => ReactNode
@@ -28,7 +35,9 @@ export interface VirtualizedListProps<T extends object>
     visibleStartIndex: number
     visibleEndIndex: number
   }) => any
+  onSelectedIndicesChange?: (evt: {selectedIndices: number[]}) => any
   onScroll?: (evt: UIEvent) => any
+  onKeyDown?: (evt: KeyboardEvent) => any
 }
 
 interface VirtualizedListState {
@@ -56,8 +65,56 @@ export default class VirtualizedList<T extends object> extends Component<
   }
 
   componentDidUpdate(prevProps: VirtualizedListProps<T>) {
-    if (prevProps.itemCount !== this.props.itemCount) {
+    if (this.elementRef.current == null) return
+
+    let {itemCount, itemSize, selectable, stickyItemCount = 0} = this.props
+    let lastSelectedIndex = this.props.selectedIndices?.slice(-1)[0]
+
+    if (prevProps.itemCount !== itemCount) {
       this.measureVisibleItems()
+    }
+
+    if (
+      selectable &&
+      lastSelectedIndex != null &&
+      (!prevProps.selectable ||
+        prevProps.selectedIndices?.slice(-1)[0] !== lastSelectedIndex) &&
+      lastSelectedIndex >= stickyItemCount
+    ) {
+      let selectedItemBegin = lastSelectedIndex * itemSize
+      let containerSize = this.props.horizontal
+        ? this.elementRef.current.clientWidth
+        : this.elementRef.current.clientHeight
+
+      if (
+        selectedItemBegin - stickyItemCount * itemSize <
+        this.scrollPosition
+      ) {
+        this.scrollPosition = selectedItemBegin - stickyItemCount * itemSize
+      } else if (
+        selectedItemBegin + itemSize - containerSize >
+        this.scrollPosition
+      ) {
+        this.scrollPosition = selectedItemBegin + itemSize - containerSize
+      }
+    }
+  }
+
+  get scrollPosition(): number {
+    return (
+      (this.props.horizontal
+        ? this.elementRef.current?.scrollLeft
+        : this.elementRef.current?.scrollTop) ?? 0
+    )
+  }
+
+  set scrollPosition(value: number) {
+    if (this.elementRef.current == null) return
+
+    if (this.props.horizontal) {
+      this.elementRef.current.scrollLeft = value
+    } else {
+      this.elementRef.current.scrollTop = value
     }
   }
 
@@ -70,9 +127,7 @@ export default class VirtualizedList<T extends object> extends Component<
 
     let {itemSize, mainAxisSize, itemCount = 0} = this.props
 
-    let scrollPosition = this.props.horizontal
-      ? this.elementRef.current.scrollLeft
-      : this.elementRef.current.scrollTop
+    let scrollPosition = this.scrollPosition
 
     let visibleStartIndex = Math.min(
       Math.floor(scrollPosition / itemSize),
@@ -98,12 +153,61 @@ export default class VirtualizedList<T extends object> extends Component<
     this.props.onScroll?.(evt)
   }
 
+  handleKeyDown = (evt: KeyboardEvent) => {
+    this.props.onKeyDown?.(evt)
+
+    if (evt.target !== this.elementRef.current || !this.props.selectable) return
+
+    let nextKey = this.props.horizontal ? 'ArrowRight' : 'ArrowDown'
+    let prevKey = this.props.horizontal ? 'ArrowLeft' : 'ArrowUp'
+    let step = evt.key === nextKey ? 1 : evt.key === prevKey ? -1 : null
+    if (step == null) return
+
+    evt.preventDefault()
+
+    if (this.props.selectedIndices == null) {
+      this.props.onSelectedIndicesChange?.({selectedIndices: [0]})
+      return
+    }
+
+    let newSelectedIndices = this.props.selectedIndices
+    let lastSelectedIndex = this.props.selectedIndices.slice(-1)[0]
+    let newSelectedIndex = wedgeNumber(
+      lastSelectedIndex + step,
+      0,
+      (this.props.itemCount ?? 0) - 1
+    )
+
+    if (!evt.shiftKey) {
+      newSelectedIndices = [newSelectedIndex]
+    } else {
+      let linearStep = detectLinearStep(this.props.selectedIndices)
+
+      if (linearStep === -step) {
+        newSelectedIndices = this.props.selectedIndices.slice(0, -1)
+      } else if (lastSelectedIndex !== newSelectedIndex) {
+        if (linearStep === step) {
+          newSelectedIndices = [...this.props.selectedIndices, newSelectedIndex]
+        } else {
+          newSelectedIndices = [lastSelectedIndex, newSelectedIndex]
+        }
+      }
+    }
+
+    if (newSelectedIndices !== this.props.selectedIndices) {
+      this.props.onSelectedIndicesChange?.({
+        selectedIndices: newSelectedIndices,
+      })
+    }
+  }
+
   render() {
     let {props, state} = this
 
     return (
       <div
         ref={this.elementRef}
+        tabIndex={props.selectable ? 0 : undefined}
         id={props.id}
         className={classnames('portui-virtualized-list', props.className)}
         style={{
@@ -113,6 +217,7 @@ export default class VirtualizedList<T extends object> extends Component<
           ...props.style,
         }}
         onScroll={this.handleScroll}
+        onKeyDown={this.handleKeyDown}
       >
         <div
           className="portui-placeholder"
@@ -128,7 +233,7 @@ export default class VirtualizedList<T extends object> extends Component<
 
         {(() => {
           let itemNodes: ReactNode[] = []
-          let unusedStickyIndices = [...(props.stickyIndices ?? [])]
+          let {stickyItemCount = 0} = props
 
           let addItemNode = (index: number, sticky: boolean) => {
             let item = this.props.getItem?.(index)
@@ -150,6 +255,9 @@ export default class VirtualizedList<T extends object> extends Component<
                     float: 'left',
                   },
                   sticky,
+                  selected:
+                    !!props.selectable &&
+                    !!props.selectedIndices?.includes(index),
                 },
                 index
               )
@@ -157,19 +265,14 @@ export default class VirtualizedList<T extends object> extends Component<
           }
 
           for (
-            let i = state.visibleStartIndex;
-            i >= 0 && i <= state.visibleEndIndex;
+            let i = Math.max(0, state.visibleStartIndex, stickyItemCount);
+            i <= state.visibleEndIndex;
             i++
           ) {
-            let unusedStickyIndicesIndex = unusedStickyIndices.indexOf(i)
-            if (unusedStickyIndicesIndex >= 0) {
-              unusedStickyIndices.splice(unusedStickyIndicesIndex, 1)
-            }
-
-            addItemNode(i, unusedStickyIndicesIndex >= 0)
+            addItemNode(i, false)
           }
 
-          for (let i of unusedStickyIndices) {
+          for (let i = 0; i < stickyItemCount; i++) {
             addItemNode(i, true)
           }
 

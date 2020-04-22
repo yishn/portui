@@ -90,7 +90,7 @@ export default class ColumnList<
           mainAxisSize={props.height}
           itemSize={props.rowHeight}
           itemCount={(props.rowCount ?? 0) + 1}
-          stickyIndices={[0]}
+          stickyItemCount={1}
           getItem={i => (i === 0 ? {} : props.getRow?.(i - 1))}
           renderItem={(row, i) =>
             i === 0 ? (
