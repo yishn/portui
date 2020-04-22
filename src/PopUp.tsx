@@ -1,8 +1,15 @@
-import {createElement, createRef, Component, MouseEvent} from 'react'
+import {
+  createElement,
+  createRef,
+  Component,
+  MouseEvent,
+  HTMLAttributes,
+} from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
-export interface PopUpProps extends PortuiComponentProps {
+export interface PopUpProps
+  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
   show?: boolean
 
   onBackdropClick?: (evt: MouseEvent) => any
@@ -39,6 +46,7 @@ export default class PopUp extends Component<PopUpProps> {
           ...props.style,
         }}
         onClick={this.handleClick}
+        {...props.innerProps}
       >
         {props.children}
       </div>

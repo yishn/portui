@@ -6,7 +6,6 @@ import {
   CSSProperties,
   UIEvent,
   KeyboardEvent,
-  DetailedHTMLProps,
   HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
@@ -20,7 +19,7 @@ export interface ItemProps {
 }
 
 export interface VirtualizedListProps<T extends object>
-  extends PortuiComponentProps {
+  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
   mainAxisSize: number
   itemSize: number
   itemCount?: number
@@ -218,6 +217,7 @@ export default class VirtualizedList<T extends object> extends Component<
         }}
         onScroll={this.handleScroll}
         onKeyDown={this.handleKeyDown}
+        {...props.innerProps}
       >
         <div
           className="portui-placeholder"

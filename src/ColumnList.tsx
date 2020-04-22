@@ -7,6 +7,7 @@ import {
   Key,
   UIEvent,
   ReactChildren,
+  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
@@ -23,7 +24,7 @@ export interface ColumnData<R extends object>
 }
 
 export interface ColumnListProps<C extends ColumnData<R>, R extends object>
-  extends PortuiComponentProps {
+  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
   rowStyle?: CSSProperties
   headerStyle?: CSSProperties
   height: number
@@ -84,6 +85,7 @@ export default class ColumnList<
           display: 'grid',
           gridTemplate: '100% / 100%',
         }}
+        {...props.innerProps}
       >
         <VirtualizedList<R | {}>
           className="portui-rows"

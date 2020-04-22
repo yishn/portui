@@ -4,11 +4,13 @@ import {
   Component,
   ReactNode,
   MouseEvent as ReactMouseEvent,
+  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
-export interface SplitContainerProps extends PortuiComponentProps {
+export interface SplitContainerProps
+  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
   vertical?: boolean
   invert?: boolean
   percentalSplit?: boolean
@@ -129,6 +131,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           gridTemplate: `${gridTemplateRows} / ${gridTemplateColumns}`,
           ...style,
         }}
+        {...this.props.innerProps}
       >
         {!invert && mainContent}
 

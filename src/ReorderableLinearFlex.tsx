@@ -7,6 +7,7 @@ import {
   WheelEvent,
   UIEvent,
   DragEvent as ReactDragEvent,
+  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
@@ -24,7 +25,7 @@ export interface ItemProps extends ItemData {
 }
 
 export interface ReorderableLinearFlexProps<T extends ItemData>
-  extends PortuiComponentProps {
+  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
   vertical?: boolean
   allowReorder?: boolean
   allowWheelScroll?: boolean
@@ -248,6 +249,7 @@ export default class ReorderableLinearFlex<
         onScroll={this.handleScroll}
         onDragOver={this.handleDragOver}
         onDrop={this.handleDrop}
+        {...props.innerProps}
       >
         {(props.items ?? []).map(item =>
           props.renderItem?.({
