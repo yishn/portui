@@ -155,7 +155,22 @@ export default class VirtualizedList<T extends object> extends Component<
   handleKeyDown = (evt: KeyboardEvent) => {
     this.props.onKeyDown?.(evt)
 
-    if (evt.target !== this.elementRef.current || !this.props.selectable) return
+    if (
+      evt.target !== this.elementRef.current ||
+      !this.props.selectable ||
+      this.props.itemCount == null ||
+      this.props.itemCount === 0
+    )
+      return
+
+    if (['Home', 'End'].includes(evt.key)) {
+      evt.preventDefault()
+
+      this.props.onSelectedIndicesChange?.({
+        selectedIndices: [evt.key === 'Home' ? 0 : this.props.itemCount - 1],
+      })
+      return
+    }
 
     let nextKey = this.props.horizontal ? 'ArrowRight' : 'ArrowDown'
     let prevKey = this.props.horizontal ? 'ArrowLeft' : 'ArrowUp'
