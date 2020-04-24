@@ -9,7 +9,7 @@ export default {
   decorators: [withKnobs],
 }
 
-let createStory = (withStickyItems: boolean) => () => {
+export const Default = () => {
   let horizontal = boolean('horizontal', false)
   let [selectedIndices, setSelectedIndices] = useState([])
 
@@ -23,7 +23,7 @@ let createStory = (withStickyItems: boolean) => () => {
       mainAxisSize={300}
       itemSize={40}
       itemCount={number('itemCount', 100)}
-      stickyItemCount={withStickyItems ? number('stickyItemCount', 2) : 0}
+      stickyItemCount={number('stickyItemCount', 0)}
       selectable={boolean('selectable', true)}
       selectedIndices={selectedIndices}
       getItem={index => ({
@@ -61,6 +61,3 @@ let createStory = (withStickyItems: boolean) => () => {
     />
   )
 }
-
-export const Default = createStory(false)
-export const StickyItems = createStory(true)
