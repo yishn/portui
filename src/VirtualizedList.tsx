@@ -163,23 +163,22 @@ export default class VirtualizedList<T extends object> extends Component<
     )
       return
 
-    if (['Home', 'End'].includes(evt.key)) {
-      evt.preventDefault()
-
-      this.props.onSelectedIndicesChange?.({
-        selectedIndices: [evt.key === 'Home' ? 0 : this.props.itemCount - 1],
-      })
-      return
-    }
-
-    let nextKey = this.props.horizontal ? 'ArrowRight' : 'ArrowDown'
-    let prevKey = this.props.horizontal ? 'ArrowLeft' : 'ArrowUp'
-    let step = evt.key === nextKey ? 1 : evt.key === prevKey ? -1 : null
+    let nextKeys = [this.props.horizontal ? 'ArrowRight' : 'ArrowDown', 'End']
+    let prevKeys = [this.props.horizontal ? 'ArrowLeft' : 'ArrowUp', 'Home']
+    let allTheWay = ['Home', 'End'].includes(evt.key)
+    let step = nextKeys.includes(evt.key)
+      ? 1
+      : prevKeys.includes(evt.key)
+      ? -1
+      : null
     if (step == null) return
 
     evt.preventDefault()
 
-    if (this.props.selectedIndices == null) {
+    if (
+      this.props.selectedIndices == null ||
+      this.props.selectedIndices.length === 0
+    ) {
       this.props.onSelectedIndicesChange?.({selectedIndices: [0]})
       return
     }
@@ -187,9 +186,13 @@ export default class VirtualizedList<T extends object> extends Component<
     let newSelectedIndices = this.props.selectedIndices
     let lastSelectedIndex = this.props.selectedIndices.slice(-1)[0]
     let newSelectedIndex = wedgeNumber(
-      lastSelectedIndex + step,
+      !allTheWay
+        ? lastSelectedIndex + step
+        : step < 0
+        ? 0
+        : this.props.itemCount - 1,
       0,
-      (this.props.itemCount ?? 0) - 1
+      this.props.itemCount - 1
     )
 
     if (!evt.shiftKey) {
@@ -197,7 +200,16 @@ export default class VirtualizedList<T extends object> extends Component<
     } else {
       let linearStep = detectLinearStep(this.props.selectedIndices)
 
-      if (linearStep === -step) {
+      if (allTheWay) {
+        let start =
+          linearStep != null && Math.abs(linearStep) === 1
+            ? this.props.selectedIndices[0]
+            : lastSelectedIndex
+
+        newSelectedIndices = Array(Math.abs(start - newSelectedIndex) + 1)
+          .fill(0)
+          .map((_, i) => start + i * step!)
+      } else if (linearStep === -step) {
         newSelectedIndices = this.props.selectedIndices.slice(0, -1)
       } else if (lastSelectedIndex !== newSelectedIndex) {
         if (linearStep === step) {

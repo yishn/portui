@@ -11,7 +11,7 @@ export default {
 
 export const Default = () => {
   let horizontal = boolean('horizontal', false)
-  let [selectedIndices, setSelectedIndices] = useState([])
+  let [selectedIndices, setSelectedIndices] = useState<number[]>([])
 
   return (
     <VirtualizedList<{text: string}>
@@ -39,15 +39,22 @@ export const Default = () => {
             borderBottom: '1px solid rgba(0, 0, 0, .1)',
             overflow: 'hidden',
             background: item.selected
-              ? 'rgba(0, 0, 0, .2)'
-              : item.sticky
               ? 'rgba(0, 0, 0, .1)'
+              : item.sticky
+              ? 'rgba(0, 0, 0, .15)'
               : undefined,
             lineHeight: '40px',
           }}
           onClick={evt => {
             action('Item.onClick')(evt)
-            setSelectedIndices(evt.ctrlKey ? indices => [...indices, i] : [i])
+            setSelectedIndices(
+              evt.ctrlKey
+                ? indices =>
+                    indices.includes(i)
+                      ? indices.filter(j => j !== i)
+                      : [...indices, i]
+                : [i]
+            )
           }}
         >
           {item.text}

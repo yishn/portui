@@ -94,7 +94,7 @@ export const Default = () => {
           {column.text}
         </div>
       )}
-      renderRow={(props, index) => (
+      renderRow={(props, i) => (
         <div
           key={props.key}
           style={{
@@ -103,7 +103,14 @@ export const Default = () => {
           }}
           onClick={evt => {
             action('Row.onClick')(evt)
-            setSelectedIndices([index])
+            setSelectedIndices(
+              evt.ctrlKey
+                ? indices =>
+                    indices.includes(i)
+                      ? indices.filter(j => j !== i)
+                      : [...indices, i]
+                : [i]
+            )
           }}
         >
           {props.children}
