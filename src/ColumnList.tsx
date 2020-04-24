@@ -6,16 +6,16 @@ import {
   CSSProperties,
   Key,
   UIEvent,
-  ReactChildren,
   HTMLAttributes,
+  RefObject,
 } from 'react'
-import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
-import VirtualizedList, {ItemProps as RowProps} from './VirtualizedList'
+import VirtualizedList, {ItemProps} from './VirtualizedList'
 import ReorderableLinearFlex, {
   ItemData as ReorderableLinearFlexItemData,
   ItemProps as ColumnHeaderProps,
 } from './ReorderableLinearFlex'
+import {wedgeNumber} from './helper'
 
 export interface ColumnData<R extends object>
   extends ReorderableLinearFlexItemData {
@@ -23,9 +23,15 @@ export interface ColumnData<R extends object>
   width: number
 }
 
+export interface RowProps extends ItemProps {
+  key: Key
+  style: CSSProperties
+  children: ReactNode[]
+  selected: boolean
+}
+
 export interface ColumnListProps<C extends ColumnData<R>, R extends object>
   extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
-  rowStyle?: CSSProperties
   headerStyle?: CSSProperties
   height: number
   rowHeight: number
@@ -33,10 +39,16 @@ export interface ColumnListProps<C extends ColumnData<R>, R extends object>
   columns?: C[]
   allowColumnsReorder?: boolean
   columnsDragDataFormat?: string
+  selectable?: boolean
+  selectedIndices?: number[]
 
   getRow?: (index: number) => R | undefined
   renderColumnHeader?: (
     column: C & ColumnHeaderProps
+  ) => Exclude<ReactNode, null | undefined>
+  renderRow?: (
+    props: RowProps,
+    index: number
   ) => Exclude<ReactNode, null | undefined>
   renderRowColumn?: (
     item: R[keyof R],
@@ -48,17 +60,31 @@ export interface ColumnListProps<C extends ColumnData<R>, R extends object>
     visibleStartIndex: number
     visibleEndIndex: number
   }) => any
+  onSelectedIndicesChange?: (evt: {selectedIndices: number[]}) => any
   onScroll?: (evt: UIEvent) => any
+  onKeyDown?: (evt: KeyboardEvent) => any
 }
 
 export default class ColumnList<
   C extends ColumnData<R>,
   R extends object
 > extends Component<ColumnListProps<C, R>> {
-  elementRef = createRef<HTMLDivElement>()
+  componentRef = createRef<VirtualizedList<{} | R>>()
+
+  get elementRef(): RefObject<HTMLDivElement> {
+    return this.componentRef.current?.elementRef ?? createRef()
+  }
 
   handleColumnsReorder = (evt: {item: C; items: C[]}) => {
     this.props.onColumnsReorder?.({column: evt.item, columns: evt.items})
+  }
+
+  handleSelectedIndicesChange = (evt: {selectedIndices: number[]}) => {
+    this.props.onSelectedIndicesChange?.({
+      selectedIndices: evt.selectedIndices.map(i =>
+        wedgeNumber(i - 1, 0, (this.props.rowCount ?? 0) - 1)
+      ),
+    })
   }
 
   render() {
@@ -74,61 +100,61 @@ export default class ColumnList<
     }
 
     return (
-      <div
-        ref={this.elementRef}
+      <VirtualizedList<R | {}>
+        ref={this.componentRef}
         id={props.id}
-        className={classnames('portui-column-list', props.className)}
-        style={{
-          ...props.style,
-          position: 'relative',
-          height: props.height,
-          display: 'grid',
-          gridTemplate: '100% / 100%',
-        }}
-        {...props.innerProps}
-      >
-        <VirtualizedList<R | {}>
-          className="portui-rows"
-          mainAxisSize={props.height}
-          itemSize={props.rowHeight}
-          itemCount={(props.rowCount ?? 0) + 1}
-          stickyItemCount={1}
-          getItem={i => (i === 0 ? {} : props.getRow?.(i - 1))}
-          renderItem={(row, i) =>
-            i === 0 ? (
-              <ReorderableLinearFlex<C>
-                key="portui-columnheaders"
-                className="portui-columnheaders"
-                style={{
-                  ...row.style,
-                  minWidth: rowWidth,
-                  ...props.headerStyle,
-                }}
-                allowReorder={props.allowColumnsReorder}
-                dragDataFormat={props.columnsDragDataFormat}
-                items={props.columns}
-                renderItem={props.renderColumnHeader}
-                onReorder={this.handleColumnsReorder}
-              />
-            ) : (
-              <div
-                key={i - 1}
-                className="portui-row"
-                style={{
+        className="portui-column-list"
+        style={props.style}
+        innerProps={props.innerProps}
+        mainAxisSize={props.height}
+        itemSize={props.rowHeight}
+        itemCount={(props.rowCount ?? 0) + 1}
+        stickyItemCount={1}
+        selectable={props.selectable}
+        selectedIndices={props.selectedIndices?.map(i => i + 1)}
+        getItem={i => (i === 0 ? {} : props.getRow?.(i - 1))}
+        renderItem={(row, i) =>
+          i === 0 ? (
+            <ReorderableLinearFlex<C>
+              key="portui-columnheaders"
+              className="portui-columnheaders"
+              style={{
+                ...row.style,
+                minWidth: rowWidth,
+                ...props.headerStyle,
+              }}
+              allowReorder={props.allowColumnsReorder}
+              dragDataFormat={props.columnsDragDataFormat}
+              items={props.columns}
+              renderItem={props.renderColumnHeader}
+              onReorder={this.handleColumnsReorder}
+            />
+          ) : (
+            props.renderRow?.(
+              {
+                ...row,
+                key: i - 1,
+                style: {
                   ...row.style,
                   ...columnsGrid,
-                  ...props.rowStyle,
-                }}
-              >
-                {props.columns?.map(column =>
-                  props.renderRowColumn?.((row as R)[column.key], column, i - 1)
-                )}
-              </div>
+                },
+                selected: !!props.selectedIndices?.includes(i - 1),
+                children:
+                  props.columns?.map(column =>
+                    props.renderRowColumn?.(
+                      (row as R)[column.key],
+                      column,
+                      i - 1
+                    )
+                  ) ?? [],
+              },
+              i - 1
             )
-          }
-          onScroll={props.onScroll}
-        />
-      </div>
+          )
+        }
+        onSelectedIndicesChange={this.handleSelectedIndicesChange}
+        onScroll={props.onScroll}
+      />
     )
   }
 }

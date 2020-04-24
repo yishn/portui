@@ -46,6 +46,7 @@ export const Default = () => {
             lineHeight: '40px',
           }}
           onClick={evt => {
+            action('Item.onClick')(evt)
             setSelectedIndices(evt.ctrlKey ? indices => [...indices, i] : [i])
           }}
         >

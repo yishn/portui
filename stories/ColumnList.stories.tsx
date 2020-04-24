@@ -22,7 +22,8 @@ interface Row {
 }
 
 export const Default = () => {
-  let columns: Column[] = [
+  let [selectedIndices, setSelectedIndices] = useState([])
+  let [columns, setColumns] = useState<Column[]>([
     {
       key: 'column0',
       width: 150,
@@ -48,7 +49,7 @@ export const Default = () => {
       width: 150,
       text: 'Column 4',
     },
-  ]
+  ])
 
   return (
     <ColumnList<Column, Row>
@@ -56,7 +57,7 @@ export const Default = () => {
         background: 'rgba(0, 0, 0, .1)',
       }}
       headerStyle={{
-        background: 'rgba(0, 0, 0, .1)',
+        background: 'rgba(0, 0, 0, .15)',
       }}
       height={400}
       rowHeight={40}
@@ -64,26 +65,48 @@ export const Default = () => {
       columns={columns}
       allowColumnsReorder={boolean('allowColumnsReorder', true)}
       columnsDragDataFormat="text/plain"
+      selectable={boolean('selectable', true)}
+      selectedIndices={selectedIndices}
       getRow={index => ({
-        column0: {text: `Row ${index}, Col 0`},
-        column1: {text: `Row ${index}, Col 1`},
-        column2: {text: `Row ${index}, Col 2`},
-        column3: {text: `Row ${index}, Col 3`},
-        column4: {text: `Row ${index}, Col 4`},
+        column0: {text: `Row ${index + 1}, Col 0`},
+        column1: {text: `Row ${index + 1}, Col 1`},
+        column2: {text: `Row ${index + 1}, Col 2`},
+        column3: {text: `Row ${index + 1}, Col 3`},
+        column4: {text: `Row ${index + 1}, Col 4`},
       })}
       renderColumnHeader={column => (
         <div
           key={column.key}
+          draggable
           style={{
             boxSizing: 'border-box',
             width: column.width,
             borderRight: '1px solid rgba(0, 0, 0, .1)',
             padding: '0 .5rem',
-            background: 'rgba(0, 0, 0, .1)',
+            background: column.reordering
+              ? 'rgba(0, 0, 0, .2)'
+              : 'rgba(0, 0, 0, .1)',
             lineHeight: '40px',
           }}
+          onDragStart={evt => column.onDragStart(column.key, evt)}
+          onDragEnd={evt => column.onDragEnd(column.key, evt)}
         >
           {column.text}
+        </div>
+      )}
+      renderRow={(props, index) => (
+        <div
+          key={props.key}
+          style={{
+            ...props.style,
+            background: props.selected ? 'rgba(0, 0, 0, .1)' : undefined,
+          }}
+          onClick={evt => {
+            action('Row.onClick')(evt)
+            setSelectedIndices([index])
+          }}
+        >
+          {props.children}
         </div>
       )}
       renderRowColumn={(item, column) => (
@@ -99,6 +122,14 @@ export const Default = () => {
           {item.text}
         </div>
       )}
+      onColumnsReorder={evt => {
+        action('onColumnsReorder')(evt)
+        setColumns(evt.columns)
+      }}
+      onSelectedIndicesChange={evt => {
+        action('onSelectedIndicesChange')(evt)
+        setSelectedIndices(evt.selectedIndices)
+      }}
     />
   )
 }
