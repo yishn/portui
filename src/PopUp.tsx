@@ -8,8 +8,7 @@ import {
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
-export interface PopUpProps
-  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
+export interface PopUpProps extends PortuiComponentProps<HTMLDivElement> {
   show?: boolean
 
   onBackdropClick?: (evt: MouseEvent) => any

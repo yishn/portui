@@ -31,7 +31,7 @@ export interface RowProps extends ItemProps {
 }
 
 export interface ColumnListProps<C extends ColumnData<R>, R extends object>
-  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
+  extends PortuiComponentProps<HTMLDivElement> {
   headerStyle?: CSSProperties
   height: number
   rowHeight: number

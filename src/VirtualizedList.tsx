@@ -19,7 +19,7 @@ export interface ItemProps {
 }
 
 export interface VirtualizedListProps<T extends object>
-  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
+  extends PortuiComponentProps<HTMLDivElement> {
   mainAxisSize: number
   itemSize: number
   itemCount?: number

@@ -5,6 +5,7 @@ import {
   ReactNode,
   MouseEvent,
   KeyboardEvent,
+  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import scrollIntoViewIfNeeded from 'scroll-into-view-if-needed'
@@ -185,6 +186,7 @@ export default class MenuList<T> extends Component<
         }}
         onMouseLeave={this.handleMouseLeave}
         onKeyDown={this.handleKeyDown}
+        {...props.innerProps}
       >
         {props.items?.map((item, i) =>
           props.renderItem?.({

@@ -25,7 +25,7 @@ export interface ItemProps extends ItemData {
 }
 
 export interface ReorderableLinearFlexProps<T extends ItemData>
-  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
+  extends PortuiComponentProps<HTMLDivElement> {
   vertical?: boolean
   allowReorder?: boolean
   allowWheelScroll?: boolean

@@ -1,8 +1,8 @@
-import {CSSProperties} from 'react'
+import {CSSProperties, HTMLAttributes} from 'react'
 
-export interface PortuiComponentProps<P> {
+export interface PortuiComponentProps<T> {
   id?: string
   className?: string
   style?: CSSProperties
-  innerProps?: P
+  innerProps?: HTMLAttributes<T>
 }

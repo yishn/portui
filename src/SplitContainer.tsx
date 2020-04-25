@@ -10,7 +10,7 @@ import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
 export interface SplitContainerProps
-  extends PortuiComponentProps<HTMLAttributes<HTMLDivElement>> {
+  extends PortuiComponentProps<HTMLDivElement> {
   vertical?: boolean
   invert?: boolean
   percentalSplit?: boolean
