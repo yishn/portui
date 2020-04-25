@@ -5,7 +5,6 @@ import {
   ReactNode,
   MouseEvent,
   KeyboardEvent,
-  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import scrollIntoViewIfNeeded from 'scroll-into-view-if-needed'
@@ -18,8 +17,7 @@ export interface MenuItem<T> {
 export interface MenuItemProps<T> extends MenuItem<T> {
   index: number
   selected: boolean
-  submenuOpen: boolean
-  hasSubmenu: boolean
+  openedSubmenu: boolean
 
   onMouseEnter: (index: number, evt: MouseEvent) => any
 }
@@ -29,20 +27,16 @@ export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
   maxHeight?: number | string
   items?: (MenuItem<T> & T)[]
   openSubmenuTimeout?: number
+  openedSubmenuIndex?: number | null
 
   renderItem?: (item: MenuItemProps<T> & T) => ReactNode
-  onSubmenuOpen?: (evt: {
-    index: number
-    item: MenuItem<T> & T
-    hasSubmenu: boolean
-  }) => any
+  onSubmenuOpen?: (evt: {index: number; item: MenuItem<T> & T}) => any
   onMouseLeave?: (evt: MouseEvent) => any
   onKeyDown?: (evt: KeyboardEvent) => any
 }
 
 interface MenuListState {
   selectedIndex: number | null
-  openSubmenu: number | null
 }
 
 export default class MenuList<T> extends Component<
@@ -57,7 +51,6 @@ export default class MenuList<T> extends Component<
 
     this.state = {
       selectedIndex: null,
-      openSubmenu: null,
     }
   }
 
@@ -71,15 +64,15 @@ export default class MenuList<T> extends Component<
     this.props.onMouseLeave?.(evt)
 
     if (
-      this.state.openSubmenu == null ||
-      this.state.openSubmenu === this.state.selectedIndex
+      this.props.openedSubmenuIndex == null ||
+      this.props.openedSubmenuIndex === this.state.selectedIndex
     )
       return
 
     clearTimeout(this.openSubmenuTimeoutId)
 
     this.setState({
-      selectedIndex: this.state.openSubmenu,
+      selectedIndex: this.props.openedSubmenuIndex,
     })
   }
 
@@ -117,12 +110,7 @@ export default class MenuList<T> extends Component<
           selectedIndex: newSelectedIndex,
         })
       })
-    } else if (
-      evt.key === 'ArrowRight' &&
-      selectedItem != null &&
-      selectedItem.subitems != null &&
-      selectedItem.subitems.length > 0
-    ) {
+    } else if (evt.key === 'ArrowRight' && selectedItem != null) {
       // Open submenu
 
       evt.preventDefault()
@@ -130,11 +118,6 @@ export default class MenuList<T> extends Component<
       this.props.onSubmenuOpen?.({
         index: this.state.selectedIndex!,
         item: selectedItem,
-        hasSubmenu: true,
-      })
-
-      this.setState({
-        openSubmenu: this.state.selectedIndex,
       })
     }
   }
@@ -146,18 +129,8 @@ export default class MenuList<T> extends Component<
     this.elementRef.current?.focus()
     clearTimeout(this.openSubmenuTimeoutId)
 
-    let hasSubmenu = item.subitems != null && item.subitems.length > 0
-
     this.openSubmenuTimeoutId = setTimeout(() => {
-      this.props.onSubmenuOpen?.({index, item: item!, hasSubmenu})
-
-      this.setState(state =>
-        state.openSubmenu !== index
-          ? {
-              openSubmenu: hasSubmenu ? index : null,
-            }
-          : null
-      )
+      this.props.onSubmenuOpen?.({index, item: item!})
     }, this.props.openSubmenuTimeout ?? 500)
 
     this.setState({
@@ -193,8 +166,7 @@ export default class MenuList<T> extends Component<
             ...item,
             index: i,
             selected: state.selectedIndex === i,
-            submenuOpen: state.openSubmenu === i,
-            hasSubmenu: item.subitems != null && item.subitems.length > 0,
+            openedSubmenu: props.openedSubmenuIndex === i,
             onMouseEnter: this.handleItemMouseEnter,
           })
         )}

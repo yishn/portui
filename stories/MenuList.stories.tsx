@@ -1,4 +1,4 @@
-import {createElement} from 'react'
+import {createElement, useState} from 'react'
 import {action} from '@storybook/addon-actions'
 import {withKnobs, number, boolean} from '@storybook/addon-knobs'
 import MenuList from '../src/MenuList'
@@ -10,6 +10,8 @@ export default {
 }
 
 let createStory = (withOverflow: boolean) => () => {
+  let [openedSubmenuIndex, setOpenedSubmenuIndex] = useState<number | null>()
+
   return (
     <MenuList
       style={{
@@ -24,14 +26,16 @@ let createStory = (withOverflow: boolean) => () => {
           subitems: i <= 3 ? [{text: 'Submenu Item'}] : [],
         }))}
       openSubmenuTimeout={number('openSubmenuTimeout', 500)}
+      openedSubmenuIndex={openedSubmenuIndex}
       renderItem={props => (
         <div
           style={{
-            borderRight: props.submenuOpen
-              ? '.3rem solid rgba(0, 0, 0, .2)'
-              : '.3rem solid transparent',
-            background: props.selected ? 'rgba(0, 0, 0, .1)' : undefined,
-            padding: '.2rem .2rem .2rem .5rem',
+            background: props.openedSubmenu
+              ? 'rgba(0, 0, 0, .2)'
+              : props.selected
+              ? 'rgba(0, 0, 0, .1)'
+              : undefined,
+            padding: '.2rem .5rem',
           }}
           onMouseEnter={evt => {
             action('Item.onMouseEnter')(props.index, evt)
@@ -39,10 +43,13 @@ let createStory = (withOverflow: boolean) => () => {
           }}
           onClick={action('Item.onClick')}
         >
-          {props.text} {props.hasSubmenu ? '▸' : ''}
+          {props.text} {props.subitems?.length > 0 ? '▸' : ''}
         </div>
       )}
-      onSubmenuOpen={action('onSubmenuOpen')}
+      onSubmenuOpen={evt => {
+        action('onSubmenuOpen')(evt)
+        setOpenedSubmenuIndex(evt.item.subitems?.length > 0 ? evt.index : null)
+      }}
     />
   )
 }
