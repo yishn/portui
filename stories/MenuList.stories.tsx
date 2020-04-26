@@ -49,7 +49,9 @@ let createStory = (withOverflow: boolean) => () => {
             action('Item.onMouseEnter')(props.index, evt)
             props.onMouseEnter(props.index, evt)
           }}
-          onClick={action('Item.onClick')}
+          onClick={evt => {
+            props.onClick(props.index, evt)
+          }}
         >
           {props.text} {props.subitems?.length > 0 ? '▸' : ''}
         </div>
@@ -58,6 +60,7 @@ let createStory = (withOverflow: boolean) => () => {
         action('onSubmenuOpen')(evt)
         setOpenedSubmenuIndex(evt.item.subitems?.length > 0 ? evt.index : null)
       }}
+      onItemClick={action('onItemClick')}
     />
   )
 }

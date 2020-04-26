@@ -21,6 +21,7 @@ export interface MenuItemProps<T> extends MenuItem<T> {
   openedSubmenu: boolean
 
   onMouseEnter: (index: number, evt: MouseEvent) => any
+  onClick: (index: number, evt: MouseEvent) => any
 }
 
 export interface MenuItemEvent<T> {
@@ -37,6 +38,7 @@ export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
 
   renderItem?: (item: MenuItemProps<T> & T) => ReactNode
   onSubmenuOpen?: (evt: MenuItemEvent<T>) => any
+  onItemClick?: (evt: MenuItemEvent<T>) => any
   onMouseLeave?: (evt: MouseEvent) => any
   onKeyDown?: (evt: KeyboardEvent) => any
 }
@@ -131,7 +133,21 @@ export default class MenuList<T> extends Component<
 
       evt.preventDefault()
 
-      this.props.onSubmenuOpen?.({
+      if (
+        this.state.selectedIndex != null &&
+        this.props.openedSubmenuIndex !== this.state.selectedIndex
+      ) {
+        this.props.onSubmenuOpen?.({
+          index: this.state.selectedIndex,
+          item: selectedItem,
+        })
+      }
+    } else if (evt.key === 'Enter' && selectedItem != null) {
+      // Trigger item click
+
+      evt.preventDefault()
+
+      this.props.onItemClick?.({
         index: this.state.selectedIndex!,
         item: selectedItem,
       })
@@ -145,13 +161,22 @@ export default class MenuList<T> extends Component<
     this.elementRef.current?.focus()
     clearTimeout(this.openSubmenuTimeoutId)
 
-    this.openSubmenuTimeoutId = setTimeout(() => {
-      this.props.onSubmenuOpen?.({index, item: item!})
-    }, this.props.openSubmenuTimeout ?? 500)
+    if (this.props.openedSubmenuIndex !== index) {
+      this.openSubmenuTimeoutId = setTimeout(() => {
+        this.props.onSubmenuOpen?.({index, item: item!})
+      }, this.props.openSubmenuTimeout ?? 500)
+    }
 
     this.setState({
       selectedIndex: index,
     })
+  }
+
+  handleItemClick = (index: number, evt: MouseEvent) => {
+    let item = this.props.items?.[index]
+    if (item == null || item.disabled) return
+
+    this.props.onItemClick?.({index, item})
   }
 
   render() {
@@ -184,6 +209,7 @@ export default class MenuList<T> extends Component<
             selected: state.selectedIndex === i,
             openedSubmenu: props.openedSubmenuIndex === i,
             onMouseEnter: this.handleItemMouseEnter,
+            onClick: this.handleItemClick,
           })
         )}
       </div>
