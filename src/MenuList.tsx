@@ -30,8 +30,6 @@ export interface MenuItemEvent<T> {
 }
 
 export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
-  maxWidth?: number | string
-  maxHeight?: number | string
   items?: (MenuItem<T> & T)[]
   openSubmenuTimeout?: number
   openedSubmenuIndex?: number | null
@@ -193,8 +191,6 @@ export default class MenuList<T> extends Component<
           flexDirection: 'column',
           flexWrap: 'nowrap',
           alignItems: 'stretch',
-          maxWidth: props.maxWidth,
-          maxHeight: props.maxHeight ?? '100%',
           overflow: 'auto',
           ...props.style,
         }}

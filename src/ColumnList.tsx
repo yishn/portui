@@ -103,7 +103,7 @@ export default class ColumnList<
       <VirtualizedList<R | {}>
         ref={this.componentRef}
         id={props.id}
-        className="portui-column-list"
+        className={'portui-column-list ' + (props.className ?? '')}
         style={props.style}
         innerProps={props.innerProps}
         mainAxisSize={props.height}

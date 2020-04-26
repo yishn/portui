@@ -17,8 +17,8 @@ let createStory = (withOverflow: boolean) => () => {
       style={{
         background: 'rgba(0, 0, 0, .1)',
         maxHeight: 300,
+        maxWidth: 200,
       }}
-      maxWidth={200}
       items={[
         ...Array(withOverflow ? 15 : 7)
           .fill(0)
