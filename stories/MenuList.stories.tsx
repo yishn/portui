@@ -19,23 +19,31 @@ let createStory = (withOverflow: boolean) => () => {
         maxHeight: 300,
       }}
       maxWidth={200}
-      items={Array(withOverflow ? 15 : 7)
-        .fill(0)
-        .map((_, i) => ({
-          text: `Item ${i + 1}`,
-          subitems: i <= 3 ? [{text: 'Submenu Item'}] : [],
-        }))}
+      items={[
+        ...Array(withOverflow ? 15 : 7)
+          .fill(0)
+          .map((_, i) => ({
+            text: `Item ${i + 1}`,
+            subitems: i <= 3 ? [{text: 'Submenu Item'}] : [],
+          })),
+        {
+          text: 'Disabled Item',
+          disabled: true,
+        },
+        {text: 'Last Item'},
+      ]}
       openSubmenuTimeout={number('openSubmenuTimeout', 500)}
       openedSubmenuIndex={openedSubmenuIndex}
       renderItem={props => (
         <div
           style={{
+            padding: '.2rem .5rem',
             background: props.openedSubmenu
               ? 'rgba(0, 0, 0, .2)'
               : props.selected
               ? 'rgba(0, 0, 0, .1)'
               : undefined,
-            padding: '.2rem .5rem',
+            color: props.disabled ? 'rgba(0, 0, 0, .6)' : undefined,
           }}
           onMouseEnter={evt => {
             action('Item.onMouseEnter')(props.index, evt)

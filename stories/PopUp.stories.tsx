@@ -19,7 +19,12 @@ export const Default = () => {
         show={showPopUp}
         onBackdropClick={action('onBackdropClick')}
       >
-        <div style={{background: 'rgba(0, 0, 0, .1)'}}>
+        <div
+          style={{
+            background: 'rgba(0, 0, 0, .1)',
+            padding: '.5rem',
+          }}
+        >
           Hello World!
           <br />
           <button onClick={evt => setShowPopUp(false)}>Close</button>

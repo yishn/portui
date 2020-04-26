@@ -11,6 +11,7 @@ import scrollIntoViewIfNeeded from 'scroll-into-view-if-needed'
 import {PortuiComponentProps} from './main'
 
 export interface MenuItem<T> {
+  disabled?: boolean
   subitems?: (MenuItem<T> & T)[]
 }
 
@@ -22,6 +23,11 @@ export interface MenuItemProps<T> extends MenuItem<T> {
   onMouseEnter: (index: number, evt: MouseEvent) => any
 }
 
+export interface MenuItemEvent<T> {
+  index: number
+  item: MenuItem<T> & T
+}
+
 export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
   maxWidth?: number | string
   maxHeight?: number | string
@@ -30,7 +36,7 @@ export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
   openedSubmenuIndex?: number | null
 
   renderItem?: (item: MenuItemProps<T> & T) => ReactNode
-  onSubmenuOpen?: (evt: {index: number; item: MenuItem<T> & T}) => any
+  onSubmenuOpen?: (evt: MenuItemEvent<T>) => any
   onMouseLeave?: (evt: MouseEvent) => any
   onKeyDown?: (evt: KeyboardEvent) => any
 }
@@ -79,7 +85,11 @@ export default class MenuList<T> extends Component<
   handleKeyDown = (evt: KeyboardEvent) => {
     this.props.onKeyDown?.(evt)
 
-    if (this.props.items == null || this.props.items.length === 0) return
+    if (
+      this.props.items == null ||
+      this.props.items.filter(item => !item.disabled).length === 0
+    )
+      return
 
     let selectedItem = this.props.items?.[this.state.selectedIndex ?? -1]
     let step = evt.key === 'ArrowUp' ? -1 : evt.key === 'ArrowDown' ? 1 : null
@@ -89,11 +99,17 @@ export default class MenuList<T> extends Component<
 
       evt.preventDefault()
 
-      let newSelectedIndex =
-        this.state.selectedIndex == null
-          ? 0
-          : (this.state.selectedIndex + step + this.props.items.length) %
+      let newSelectedIndex = 0
+
+      if (this.state.selectedIndex != null) {
+        for (let i = 1; ; i++) {
+          newSelectedIndex =
+            (this.state.selectedIndex + i * step + this.props.items.length) %
             this.props.items.length
+
+          if (!this.props.items[newSelectedIndex].disabled) break
+        }
+      }
 
       let itemElement = this.getItemElementByIndex(newSelectedIndex)
 
@@ -124,7 +140,7 @@ export default class MenuList<T> extends Component<
 
   handleItemMouseEnter = (index: number, evt: MouseEvent) => {
     let item = this.props.items?.[index]
-    if (item == null) return
+    if (item == null || item.disabled) return
 
     this.elementRef.current?.focus()
     clearTimeout(this.openSubmenuTimeoutId)

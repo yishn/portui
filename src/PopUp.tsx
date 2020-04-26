@@ -1,10 +1,4 @@
-import {
-  createElement,
-  createRef,
-  Component,
-  MouseEvent,
-  HTMLAttributes,
-} from 'react'
+import {createElement, createRef, Component, MouseEvent} from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
 
