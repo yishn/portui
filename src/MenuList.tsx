@@ -27,6 +27,7 @@ export interface MenuItemProps<T> extends MenuItem<T> {
 export interface MenuItemEvent<T> {
   index: number
   item: MenuItem<T> & T
+  currentTarget: Element
 }
 
 export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
@@ -60,10 +61,12 @@ export default class MenuList<T> extends Component<
     }
   }
 
-  getItemElementByIndex(index: number): Element | undefined {
-    return this.elementRef.current
-      ?.querySelectorAll('.portui-menu-list > *')
-      .item(index)
+  getItemElementByIndex(index: number): Element | null {
+    return (
+      this.elementRef.current?.querySelector(
+        `.portui-menu-list > *:nth-child(${index + 1})`
+      ) ?? null
+    )
   }
 
   handleMouseLeave = (evt: MouseEvent) => {
@@ -138,8 +141,11 @@ export default class MenuList<T> extends Component<
         this.props.onSubmenuOpen?.({
           index: this.state.selectedIndex,
           item: selectedItem,
+          currentTarget: this.getItemElementByIndex(this.state.selectedIndex)!,
         })
       }
+    } else if (evt.key === 'ArrowLeft' && selectedItem != null) {
+      evt.preventDefault()
     } else if (evt.key === 'Enter' && selectedItem != null) {
       // Trigger item click
 
@@ -148,6 +154,7 @@ export default class MenuList<T> extends Component<
       this.props.onItemClick?.({
         index: this.state.selectedIndex!,
         item: selectedItem,
+        currentTarget: this.getItemElementByIndex(this.state.selectedIndex!)!,
       })
     }
   }
@@ -161,7 +168,11 @@ export default class MenuList<T> extends Component<
 
     if (this.props.openedSubmenuIndex !== index) {
       this.openSubmenuTimeoutId = setTimeout(() => {
-        this.props.onSubmenuOpen?.({index, item: item!})
+        this.props.onSubmenuOpen?.({
+          index,
+          item: item!,
+          currentTarget: this.getItemElementByIndex(index)!,
+        })
       }, this.props.openSubmenuTimeout ?? 500)
     }
 
@@ -174,7 +185,11 @@ export default class MenuList<T> extends Component<
     let item = this.props.items?.[index]
     if (item == null || item.disabled) return
 
-    this.props.onItemClick?.({index, item})
+    this.props.onItemClick?.({
+      index,
+      item,
+      currentTarget: this.getItemElementByIndex(index)!,
+    })
   }
 
   render() {

@@ -100,13 +100,13 @@ export default class ReorderableLinearFlex<
     return this.props.items?.find(item => item.key === itemKey)
   }
 
-  getItemElementByKey(itemKey: Key): HTMLElement | undefined {
-    if (this.props.items == null || this.elementRef.current == null) return
+  getItemElementByKey(itemKey: Key): HTMLElement | null {
+    if (this.props.items == null || this.elementRef.current == null) return null
 
     let index = this.props.items.findIndex(item => item.key === itemKey)
-    let itemElement = this.elementRef.current
-      .querySelectorAll('.portui-reorderable-linear-flex > *')
-      .item(index) as HTMLElement
+    let itemElement = this.elementRef.current.querySelector(
+      `.portui-reorderable-linear-flex > *:nth-child(${index + 1})`
+    ) as HTMLElement | null
 
     return itemElement
   }
