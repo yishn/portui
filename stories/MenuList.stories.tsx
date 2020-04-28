@@ -36,6 +36,7 @@ let createStory = (withOverflow: boolean) => () => {
       openedSubmenuIndex={openedSubmenuIndex}
       renderItem={props => (
         <div
+          key={props.index}
           style={{
             padding: '.2rem .5rem',
             background: props.openedSubmenu

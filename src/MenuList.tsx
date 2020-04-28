@@ -167,11 +167,13 @@ export default class MenuList<T> extends Component<
     clearTimeout(this.openSubmenuTimeoutId)
 
     if (this.props.openedSubmenuIndex !== index) {
+      let {currentTarget} = evt
+
       this.openSubmenuTimeoutId = setTimeout(() => {
         this.props.onSubmenuOpen?.({
           index,
           item: item!,
-          currentTarget: this.getItemElementByIndex(index)!,
+          currentTarget,
         })
       }, this.props.openSubmenuTimeout ?? 500)
     }
