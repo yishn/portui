@@ -4,7 +4,6 @@ import {
   Component,
   ReactNode,
   MouseEvent as ReactMouseEvent,
-  HTMLAttributes,
 } from 'react'
 import classnames from 'classnames'
 import {PortuiComponentProps} from './main'
@@ -17,6 +16,8 @@ export interface SplitContainerProps
   sideSize?: number
   splitterSize?: number
   splitterZIndex?: number
+  horizontalCursor?: string
+  verticalCursor?: string
   mainContent?: ReactNode
   sideContent?: ReactNode
 
@@ -90,6 +91,8 @@ export default class SplitContainer extends Component<SplitContainerProps> {
       percentalSplit: procentualSplit,
       mainContent,
       sideContent,
+      verticalCursor = 'ns-resize',
+      horizontalCursor = 'ew-resize',
       sideSize = 200,
       splitterSize = 5,
       splitterZIndex = 999,
@@ -110,7 +113,7 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           position: 'absolute',
           width: vertical ? undefined : splitterSize,
           height: !vertical ? undefined : splitterSize,
-          cursor: vertical ? 'ns-resize' : 'ew-resize',
+          cursor: vertical ? verticalCursor : horizontalCursor,
           left: vertical ? 0 : !invert ? 0 : undefined,
           right: vertical ? 0 : invert ? 0 : undefined,
           top: !vertical ? 0 : !invert ? 0 : undefined,
