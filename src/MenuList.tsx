@@ -62,11 +62,7 @@ export default class MenuList<T> extends Component<
   }
 
   getItemElementByIndex(index: number): Element | null {
-    return (
-      this.elementRef.current?.querySelector(
-        `.portui-menu-list > *:nth-child(${index + 1})`
-      ) ?? null
-    )
+    return this.elementRef.current?.children[index] ?? null
   }
 
   handleMouseLeave = (evt: MouseEvent) => {
