@@ -15,7 +15,6 @@ import MenuList, {MenuItem, MenuItemProps, MenuItemEvent} from './MenuList'
 export interface ContextMenuProps<T>
   extends PortuiComponentProps<HTMLDivElement> {
   menuListStyle?: CSSProperties
-
   x?: number
   y?: number
   show?: boolean
@@ -51,7 +50,7 @@ export default class ContextMenu<T> extends Component<
   static getDerivedStateFromProps<T>(
     props: ContextMenuProps<T>,
     prevState: ContextMenuState<T>
-  ): Partial<ContextMenuState<T>> | undefined {
+  ): Partial<ContextMenuState<T>> {
     return {
       prevItems: props.items,
       ...(!props.show || props.items !== prevState.prevItems

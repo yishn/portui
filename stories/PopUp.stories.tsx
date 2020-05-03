@@ -1,10 +1,12 @@
 import {createElement, Fragment, useState} from 'react'
 import {action} from '@storybook/addon-actions'
+import {withKnobs, number} from '@storybook/addon-knobs'
 import PopUp from '../src/PopUp'
 
 export default {
   title: 'PopUp',
   component: PopUp,
+  decorators: [withKnobs],
 }
 
 export const Default = () => {
@@ -17,6 +19,7 @@ export const Default = () => {
       <PopUp
         style={{background: 'rgba(0, 0, 0, .1)'}}
         show={showPopUp}
+        unmountDelay={number('unmountDelay', 0)}
         onBackdropClick={action('onBackdropClick')}
       >
         <div
