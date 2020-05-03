@@ -6,6 +6,7 @@ import {
   ReactNode,
   CSSProperties,
   Key,
+  KeyboardEvent,
 } from 'react'
 import {PortuiComponentProps} from './main'
 import PopUp from './PopUp'
@@ -112,23 +113,20 @@ export default class ContextMenu<T> extends Component<
   }
 
   handleSubmenuOpen = (index: number, evt: MenuItemEvent<T>) => {
-    let hasSubmenu = (evt.item.subitems?.length ?? 0) > 0
     let itemRect = evt.currentTarget.getBoundingClientRect()
 
     this.setState(state => {
       if (state.openSubmenus[index]?.selectedIndex !== evt.index) {
         let openSubmenus = state.openSubmenus.slice(0, index)
 
-        if (hasSubmenu) {
-          openSubmenus[index] = {
-            selectedIndex: evt.index,
-            x: itemRect.right,
-            y: itemRect.top,
-            itemLeft: itemRect.left,
-            itemRight: itemRect.right,
-            itemTop: itemRect.top,
-            itemBottom: itemRect.bottom,
-          }
+        openSubmenus[index] = {
+          selectedIndex: evt.index,
+          x: itemRect.right,
+          y: itemRect.top,
+          itemLeft: itemRect.left,
+          itemRight: itemRect.right,
+          itemTop: itemRect.top,
+          itemBottom: itemRect.bottom,
         }
 
         return {openSubmenus}
@@ -136,6 +134,30 @@ export default class ContextMenu<T> extends Component<
 
       return null
     })
+  }
+
+  handleSubmenuClose = (index: number) => {
+    this.setState(state => {
+      return {openSubmenus: state.openSubmenus.slice(0, index)}
+    })
+  }
+
+  handleKeyDown = (index: number, evt: KeyboardEvent) => {
+    if (evt.key === 'ArrowLeft') {
+      evt.preventDefault()
+
+      this.setState(state => {
+        if (this.state.openSubmenus[index] == null) {
+          return {openSubmenus: state.openSubmenus.slice(0, index - 1)}
+        }
+
+        return null
+      })
+    } else if (evt.key === 'Escape') {
+      evt.preventDefault()
+
+      this.props.onClose?.()
+    }
   }
 
   render() {
@@ -162,6 +184,8 @@ export default class ContextMenu<T> extends Component<
           openedSubmenuIndex={state.openSubmenus[p.index]?.selectedIndex}
           renderItem={props.renderItem}
           onSubmenuOpen={evt => this.handleSubmenuOpen(p.index, evt)}
+          onSubmenuClose={() => this.handleSubmenuClose(p.index)}
+          onKeyDown={evt => this.handleKeyDown(p.index, evt)}
           onItemClick={props.onItemClick}
         />
       )
