@@ -37,6 +37,7 @@ export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
 
   renderItem?: (item: MenuItemProps<T> & T) => ReactNode
   onSubmenuOpen?: (evt: MenuItemEvent<T>) => any
+  onSubmenuClose?: () => any
   onItemClick?: (evt: MenuItemEvent<T>) => any
   onMouseLeave?: (evt: MouseEvent) => any
   onKeyDown?: (evt: KeyboardEvent) => any
@@ -134,14 +135,22 @@ export default class MenuList<T> extends Component<
         this.state.selectedIndex != null &&
         this.props.openedSubmenuIndex !== this.state.selectedIndex
       ) {
-        this.props.onSubmenuOpen?.({
-          index: this.state.selectedIndex,
-          item: selectedItem,
-          currentTarget: this.getItemElementByIndex(this.state.selectedIndex)!,
-        })
+        if ((selectedItem.subitems?.length ?? 0) > 0) {
+          this.props.onSubmenuOpen?.({
+            index: this.state.selectedIndex,
+            item: selectedItem,
+            currentTarget: this.getItemElementByIndex(
+              this.state.selectedIndex
+            )!,
+          })
+        } else {
+          this.props.onSubmenuClose?.()
+        }
       }
     } else if (evt.key === 'ArrowLeft' && selectedItem != null) {
       evt.preventDefault()
+
+      this.props.onSubmenuClose?.()
     } else if (evt.key === 'Enter' && selectedItem != null) {
       // Trigger item click
 
@@ -166,11 +175,15 @@ export default class MenuList<T> extends Component<
       let {currentTarget} = evt
 
       this.openSubmenuTimeoutId = setTimeout(() => {
-        this.props.onSubmenuOpen?.({
-          index,
-          item: item!,
-          currentTarget,
-        })
+        if (item != null && (item.subitems?.length ?? 0) > 0) {
+          this.props.onSubmenuOpen?.({
+            index,
+            item,
+            currentTarget,
+          })
+        } else {
+          this.props.onSubmenuClose?.()
+        }
       }, this.props.openSubmenuTimeout ?? 500)
     }
 

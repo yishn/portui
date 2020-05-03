@@ -61,6 +61,10 @@ let createStory = (withOverflow: boolean) => () => {
         action('onSubmenuOpen')(evt)
         setOpenedSubmenuIndex(evt.item.subitems?.length > 0 ? evt.index : null)
       }}
+      onSubmenuClose={() => {
+        action('onSubmenuClose')()
+        setOpenedSubmenuIndex(null)
+      }}
       onItemClick={action('onItemClick')}
     />
   )
