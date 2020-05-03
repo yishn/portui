@@ -177,6 +177,7 @@ export default class ContextMenu<T> extends Component<
             position: 'absolute',
             left: p.x,
             top: p.y,
+            maxHeight: '100%',
             ...props.menuListStyle,
           }}
           items={p.items}
