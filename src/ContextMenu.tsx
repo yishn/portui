@@ -21,7 +21,9 @@ export interface ContextMenuProps<T>
   openSubmenuTimeout?: number
   items?: (MenuItem<T> & T)[]
 
-  renderItem?: (item: MenuItemProps<T> & T) => ReactNode
+  renderItem?: (
+    item: MenuItemProps<T> & T
+  ) => Exclude<ReactNode, null | undefined>
   onClose?: () => any
   onItemClick?: (evt: MenuItemEvent<T>) => any
 }

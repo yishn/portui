@@ -35,7 +35,9 @@ export interface MenuListProps<T> extends PortuiComponentProps<HTMLDivElement> {
   openSubmenuTimeout?: number
   openedSubmenuIndex?: number | null
 
-  renderItem?: (item: MenuItemProps<T> & T) => ReactNode
+  renderItem?: (
+    item: MenuItemProps<T> & T
+  ) => Exclude<ReactNode, null | undefined>
   onSubmenuOpen?: (evt: MenuItemEvent<T>) => any
   onSubmenuClose?: () => any
   onItemClick?: (evt: MenuItemEvent<T>) => any

@@ -32,7 +32,7 @@ export interface ReorderableLinearFlexProps<T extends ItemData>
   dragDataFormat?: string
   items?: T[]
 
-  renderItem?: (props: ItemProps & T) => ReactNode
+  renderItem?: (props: ItemProps & T) => Exclude<ReactNode, null | undefined>
   onScroll?: (evt: UIEvent) => any
   onReorder?: (evt: {item: T; items: T[]}) => any
 }
