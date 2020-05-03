@@ -59,6 +59,7 @@ export const Default = () => {
                 ? 'rgba(0, 0, 0, .1)'
                 : undefined,
               color: props.disabled ? 'rgba(0, 0, 0, .6)' : undefined,
+              whiteSpace: 'nowrap',
             }}
             onMouseEnter={evt => {
               action('Item.onMouseEnter')(props.index, evt)

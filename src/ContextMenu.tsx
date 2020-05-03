@@ -32,12 +32,12 @@ interface ContextMenuState<T> {
   openTop: boolean
   openSubmenus: {
     selectedIndex: number
+    x: number
+    y: number
     itemLeft: number
     itemRight: number
     itemTop: number
     itemBottom: number
-    openLeft?: boolean
-    openTop?: boolean
   }[]
 }
 
@@ -73,6 +73,44 @@ export default class ContextMenu<T> extends Component<
     return this.popUpRef.current?.elementRef ?? createRef()
   }
 
+  componentDidUpdate(
+    prevProps: ContextMenuProps<T>,
+    prevState: ContextMenuState<T>
+  ) {
+    if (this.elementRef.current == null) return
+
+    if (prevState.openSubmenus !== this.state.openSubmenus) {
+      let children = this.elementRef.current.children
+      let lastSubmenu = children[children.length - 1] as HTMLElement | undefined
+      if (lastSubmenu == null) return
+
+      let viewportRect = this.elementRef.current.getBoundingClientRect()
+      let rect = lastSubmenu.getBoundingClientRect()
+
+      this.setState(({openSubmenus}) => {
+        let [lastSubmenuData] = openSubmenus.slice(-1)
+        if (lastSubmenuData == null) return null
+
+        if (rect.right > viewportRect.right) {
+          // Open left
+          lastSubmenuData.x = Math.max(0, lastSubmenuData.itemLeft - rect.width)
+        }
+
+        if (rect.bottom > viewportRect.bottom) {
+          // Open top
+          lastSubmenuData.y = Math.max(
+            0,
+            lastSubmenuData.itemBottom - rect.height
+          )
+        }
+
+        return {openSubmenus}
+      })
+
+      lastSubmenu.focus()
+    }
+  }
+
   handleSubmenuOpen = (index: number, evt: MenuItemEvent<T>) => {
     let hasSubmenu = (evt.item.subitems?.length ?? 0) > 0
     let itemRect = evt.currentTarget.getBoundingClientRect()
@@ -84,8 +122,10 @@ export default class ContextMenu<T> extends Component<
         if (hasSubmenu) {
           openSubmenus[index] = {
             selectedIndex: evt.index,
-            itemLeft: itemRect.left + 5,
-            itemRight: itemRect.right - 5,
+            x: itemRect.right,
+            y: itemRect.top,
+            itemLeft: itemRect.left,
+            itemRight: itemRect.right,
             itemTop: itemRect.top,
             itemBottom: itemRect.bottom,
           }
@@ -106,8 +146,6 @@ export default class ContextMenu<T> extends Component<
       key: Key
       x: number
       y: number
-      openLeft: boolean
-      openTop: boolean
       items?: (MenuItem<T> & T)[]
     }) => {
       return (
@@ -115,8 +153,8 @@ export default class ContextMenu<T> extends Component<
           key={p.key}
           style={{
             position: 'absolute',
-            [!p.openLeft ? 'left' : 'right']: p.x,
-            [!p.openTop ? 'top' : 'bottom']: p.y,
+            left: p.x,
+            top: p.y,
             ...props.menuListStyle,
           }}
           items={p.items}
@@ -131,6 +169,7 @@ export default class ContextMenu<T> extends Component<
 
     return (
       <PopUp
+        ref={this.popUpRef}
         id={props.id}
         className={'portui-context-menu ' + (props.className ?? '')}
         style={props.style}
@@ -144,8 +183,6 @@ export default class ContextMenu<T> extends Component<
             key: 'main',
             x: props.x ?? 0,
             y: props.y ?? 0,
-            openLeft: state.openLeft,
-            openTop: state.openTop,
             items: props.items,
           })}
 
@@ -169,10 +206,8 @@ export default class ContextMenu<T> extends Component<
                 .slice(0, i + 1)
                 .map(x => x.selectedIndex)
                 .join(','),
-              x: props.openLeft ? props.itemLeft : props.itemRight,
-              y: props.openTop ? props.itemBottom : props.itemTop,
-              openLeft: !!props.openLeft,
-              openTop: !!props.openTop,
+              x: props.x,
+              y: props.y,
               items,
             })
           })
