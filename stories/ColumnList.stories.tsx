@@ -63,8 +63,8 @@ export const Default = () => {
       rowHeight={40}
       rowCount={number('rowCount', 100)}
       columns={columns}
-      allowColumnsReorder={boolean('allowColumnsReorder', true)}
-      columnsDragDataFormat="text/plain"
+      allowColumnReorder={boolean('allowColumnReorder', true)}
+      columnDragDataFormat="text/plain"
       selectable={boolean('selectable', true)}
       selectedIndices={selectedIndices}
       getRow={index => ({
@@ -129,8 +129,8 @@ export const Default = () => {
           {item.text}
         </div>
       )}
-      onColumnsReorder={evt => {
-        action('onColumnsReorder')(evt)
+      onColumnReorder={evt => {
+        action('onColumnReorder')(evt)
         setColumns(evt.columns)
       }}
       onSelectedIndicesChange={evt => {

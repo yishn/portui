@@ -6,7 +6,6 @@ import {
   CSSProperties,
   Key,
   UIEvent,
-  HTMLAttributes,
   RefObject,
 } from 'react'
 import {PortuiComponentProps} from './main'
@@ -37,8 +36,8 @@ export interface ColumnListProps<C extends ColumnData<R>, R extends object>
   rowHeight: number
   rowCount?: number
   columns?: C[]
-  allowColumnsReorder?: boolean
-  columnsDragDataFormat?: string
+  allowColumnReorder?: boolean
+  columnDragDataFormat?: string
   selectable?: boolean
   selectedIndices?: number[]
 
@@ -55,7 +54,7 @@ export interface ColumnListProps<C extends ColumnData<R>, R extends object>
     column: C,
     index: number
   ) => Exclude<ReactNode, null | undefined>
-  onColumnsReorder?: (evt: {column: C; columns: C[]}) => any
+  onColumnReorder?: (evt: {column: C; columns: C[]}) => any
   onItemsVisibilityChange?: (evt: {
     visibleStartIndex: number
     visibleEndIndex: number
@@ -75,8 +74,8 @@ export default class ColumnList<
     return this.componentRef.current?.elementRef ?? createRef()
   }
 
-  handleColumnsReorder = (evt: {item: C; items: C[]}) => {
-    this.props.onColumnsReorder?.({column: evt.item, columns: evt.items})
+  handleColumnReorder = (evt: {item: C; items: C[]}) => {
+    this.props.onColumnReorder?.({column: evt.item, columns: evt.items})
   }
 
   handleSelectedIndicesChange = (evt: {selectedIndices: number[]}) => {
@@ -123,11 +122,11 @@ export default class ColumnList<
                 minWidth: rowWidth,
                 ...props.headerStyle,
               }}
-              allowReorder={props.allowColumnsReorder}
-              dragDataFormat={props.columnsDragDataFormat}
+              allowReorder={props.allowColumnReorder}
+              dragDataFormat={props.columnDragDataFormat}
               items={props.columns}
               renderItem={props.renderColumnHeader}
-              onReorder={this.handleColumnsReorder}
+              onReorder={this.handleColumnReorder}
             />
           ) : (
             props.renderRow?.(

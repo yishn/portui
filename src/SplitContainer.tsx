@@ -88,17 +88,16 @@ export default class SplitContainer extends Component<SplitContainerProps> {
       style = {},
       vertical,
       invert,
-      percentalSplit: procentualSplit,
+      percentalSplit,
       mainContent,
       sideContent,
       verticalCursor = 'ns-resize',
       horizontalCursor = 'ew-resize',
       sideSize = 200,
       splitterSize = 5,
-      splitterZIndex = 999,
     } = this.props
 
-    let gridTemplate = procentualSplit
+    let gridTemplate = percentalSplit
       ? [`${100 - sideSize}%`, `${sideSize}%`]
       : [`calc(100% - ${sideSize}px)`, `${sideSize}px`]
     if (invert) gridTemplate.reverse()
@@ -118,7 +117,6 @@ export default class SplitContainer extends Component<SplitContainerProps> {
           right: vertical ? 0 : invert ? 0 : undefined,
           top: !vertical ? 0 : !invert ? 0 : undefined,
           bottom: !vertical ? 0 : invert ? 0 : undefined,
-          zIndex: splitterZIndex,
         }}
         onMouseDown={this.handleResizerMouseDown}
       />
